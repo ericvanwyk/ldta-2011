@@ -1,0 +1,16 @@
+MODULE Record;
+
+TYPE RecordTest = RECORD
+       foo: INTEGER;
+       bar: BOOLEAN
+     END;
+
+VAR r: RecordTest;
+    ok: BOOLEAN; (* Ensure error is reported on the correct line *)
+
+BEGIN
+  r.foo := 42;
+
+  (* Ensure error is reported on the correct line *)
+  r.bar := 37; ok := TRUE;
+END Record.

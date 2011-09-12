@@ -1,0 +1,6 @@
+MODULE ProcNoEnd;
+
+PROCEDURE FOO;
+  CONST x = 3;
+
+END ProcNoEnd.

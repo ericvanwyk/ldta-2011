@@ -1,0 +1,11 @@
+MODULE DivBoolInt;
+
+VAR b: BOOLEAN;
+    i: INTEGER;
+    ok: BOOLEAN; (* Ensures errors occur on the correct line *)
+
+BEGIN
+  b := TRUE;
+  i := 42;
+  b := b DIV i; ok := TRUE;
+END DivBoolInt.

@@ -1,0 +1,15 @@
+MODULE ConstDiffScope2;
+
+CONST x = 3;
+
+PROCEDURE foo;
+
+  PROCEDURE bar;
+
+    CONST x = 2;
+
+    END bar;
+
+  END foo;
+
+END ConstDiffScope2.

@@ -1,0 +1,11 @@
+MODULE BoolLimitCase;
+
+VAR x,y: INTEGER;
+
+BEGIN
+  x := 0;
+  CASE x OF
+    0..19: y := 0
+  | TRUE: y := 1
+  END
+END BoolLimitCase.

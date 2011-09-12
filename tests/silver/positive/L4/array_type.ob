@@ -1,0 +1,5 @@
+MODULE ArrayType;
+
+TYPE MYARRAY = ARRAY 2 OF INTEGER;
+
+END ArrayType.

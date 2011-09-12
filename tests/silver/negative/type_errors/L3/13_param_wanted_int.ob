@@ -1,0 +1,14 @@
+MODULE ParamWantedInt;
+
+VAR y: BOOLEAN;
+
+PROCEDURE FOO (x: INTEGER);
+  
+  BEGIN
+    x := 42;
+  END FOO;
+
+BEGIN
+  y := TRUE;
+  FOO(y);
+END ParamWantedInt.

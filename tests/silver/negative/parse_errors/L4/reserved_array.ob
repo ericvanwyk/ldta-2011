@@ -1,0 +1,5 @@
+MODULE Reserved;
+
+VAR ARRAY: INTEGER;
+
+END Reserved.

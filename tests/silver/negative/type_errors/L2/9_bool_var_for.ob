@@ -1,0 +1,12 @@
+MODULE BoolVarFor;
+
+VAR x: INTEGER;
+    b: BOOLEAN;
+
+BEGIN
+  x := 42;
+  b := TRUE;
+  FOR b := 0 TO 10 DO
+    x := x + 1
+  END
+END BoolVarFor.

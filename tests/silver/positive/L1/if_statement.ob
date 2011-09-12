@@ -1,0 +1,11 @@
+MODULE IfStatement;
+
+VAR b: BOOLEAN;
+    x: INTEGER;
+
+BEGIN
+  IF b 
+  THEN
+    x := 4
+  END
+END IfStatement.

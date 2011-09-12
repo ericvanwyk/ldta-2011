@@ -1,0 +1,13 @@
+MODULE UpperLimCase;
+
+VAR x,y: INTEGER;
+    b: BOOLEAN;
+
+BEGIN
+  x := 0;
+  b := TRUE;
+  CASE x OF
+    0..b: y := 0
+  | 20: y := 1
+  END
+END UpperLimCase.

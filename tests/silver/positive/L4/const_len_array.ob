@@ -1,0 +1,9 @@
+MODULE ConstLenArray;
+
+CONST x = 42;
+
+TYPE MYARRAY = ARRAY x OF INTEGER;
+
+VAR array1: ARRAY x OF INTEGER;
+
+END ConstLenArray.

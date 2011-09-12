@@ -1,0 +1,30 @@
+MODULE Lift1;
+
+VAR x, fres, gres : INTEGER ;
+
+PROCEDURE p ;
+ PROCEDURE a ( VAR b,x : INTEGER ) ;
+  PROCEDURE f ( VAR y,x,b : INTEGER ) ;
+    PROCEDURE g ( VAR z,y,x,b : INTEGER );
+      BEGIN
+         z := z + y + x + b ;
+      END g ;
+    BEGIN
+      g(y, y, x, b) ;
+      y := y + x ;
+    END f ;
+
+  BEGIN
+    f(b, x, b);
+  END a ;
+
+ BEGIN
+   x := 1 ;
+   fres := 2 ;
+   a(fres,x) ;
+   gres := 3 ;
+ END p ;
+
+BEGIN
+  p 
+END Lift1.

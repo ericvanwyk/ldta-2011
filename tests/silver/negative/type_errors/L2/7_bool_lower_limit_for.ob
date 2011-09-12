@@ -1,0 +1,10 @@
+MODULE BoolLowLimFor;
+
+VAR x,y: INTEGER;
+
+BEGIN
+  x := 42;
+  FOR y := TRUE TO 10 DO
+    x := x + 1
+  END
+END BoolLowLimFor.

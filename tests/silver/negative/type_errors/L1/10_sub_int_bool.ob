@@ -1,0 +1,11 @@
+MODULE SubIntBool;
+
+VAR i: INTEGER;
+    b: BOOLEAN;
+    ok: BOOLEAN; (* Ensures errors occur on the correct line *)
+
+BEGIN
+  i := 42;
+  b := TRUE;
+  i := i - b; ok := TRUE;
+END SubIntBool.

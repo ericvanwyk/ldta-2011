@@ -1,0 +1,13 @@
+MODULE LowLimCase;
+
+VAR x,y: INTEGER;
+    b: BOOLEAN;
+
+BEGIN
+  x := 0;
+  b := TRUE;
+  CASE x OF
+    b..19: y := 0
+  | 20: y := 1
+  END
+END LowLimCase.

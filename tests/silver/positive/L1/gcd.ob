@@ -1,0 +1,18 @@
+MODULE Gcd;
+
+  VAR a, b : INTEGER;
+
+BEGIN 
+  a := 456 ;
+  b := 132 ;
+  
+  WHILE b # 0 DO
+    IF a > b THEN
+      a := a - b
+    ELSE
+      b := b - a
+    END
+  END ;
+
+END Gcd.
+

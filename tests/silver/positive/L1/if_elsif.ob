@@ -1,0 +1,17 @@
+MODULE IfElsif;
+
+VAR x,y,z: INTEGER;
+
+BEGIN
+  x := 4;
+  y := 5;
+  IF x < y
+  THEN
+    z := 17
+  ELSIF y > x
+  THEN
+    z := 42
+  ELSE
+    z := 0
+  END
+END IfElsif.

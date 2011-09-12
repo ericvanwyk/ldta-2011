@@ -1,0 +1,15 @@
+MODULE TypeDiffScope2;
+
+TYPE FOO = ARRAY 3 OF INTEGER;
+
+PROCEDURE foo;
+
+  PROCEDURE bar;
+
+    TYPE FOO = ARRAY 42 OF BOOLEAN;
+
+    END bar;
+
+  END foo;
+
+END TypeDiffScope2.

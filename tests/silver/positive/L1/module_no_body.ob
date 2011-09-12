@@ -1,0 +1,7 @@
+MODULE M ;
+
+  VAR a, b : INTEGER;
+
+      p, q : BOOLEAN;
+
+END M.
