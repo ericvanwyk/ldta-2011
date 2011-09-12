@@ -1,0 +1,6 @@
+#!/bin/bash
+
+## To run only a specific language's test, use the '-L#' option (sub 1, 2, 3, or 4 for '#')
+
+## Run supertest.py with ob0c reference compiler
+python supertest.py $@ ob0c

@@ -1,0 +1,402 @@
+#!/usr/bin/python
+
+import filecmp # Compare *_lifted.ob with *_lifted_lifted.ob
+import glob # Find *.ob files within assorted file structures
+import os # Path methods
+import re # Regex
+import subprocess # Popen for running tests
+import sys # Command line arguments and exit
+
+COMMAND = ""
+TESTS = None
+LEVEL = None
+CODEGEN = False
+
+#######################################################################
+# Runs all tests for Silver's implementation of Oberon0
+#
+# Written by: Kevin Williams
+#######################################################################
+
+def printTest(test_type, passed, error, path):
+  ## Unified method to show results to user
+  text = test_type + "\t" + "- "
+  
+  if passed:
+    text += "PASS:"
+  else: # not passed
+    text += "FAIL: " + error
+
+  text += "\t"
+
+  text += path
+
+  print text.expandtabs(20)
+
+
+def runPositiveTest(testpath, results):
+  success = False
+
+  ## Remember where we started
+  cur_dir = os.path.abspath('.') + "/"
+
+  ## cd into testname's location
+  os.chdir(os.path.dirname(os.path.abspath(testpath)))
+
+  ## Remove directory portion of testname
+  testname = os.path.basename(testpath)
+
+  outputs = subprocess.Popen(COMMAND + ' ' + testname, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+  if len(outputs.stdout.readlines()) > 0:
+    printTest("Positive test", False, "ERROR", testpath)
+    results['positive'][1] = results['positive'][1] + 1
+    results['fail']['ERROR'].append(testpath)
+
+  elif len(outputs.stderr.readlines()) > 0:
+    printTest("Positive test", False, "STDERR", testpath)
+    results['positive'][1] = results['positive'][1] + 1
+    results['fail']["STDERR"].append(testpath)
+
+  else:
+    printTest("Positive test", True, "", testpath)
+    results['positive'][0] = results['positive'][0] + 1
+    success = True
+  
+  ## cd back to where we started
+  os.chdir(os.path.dirname(cur_dir))
+  
+  return success
+
+ 
+def runParseTest(testpath, results):
+  success = False
+
+  ## Remember where we started
+  cur_dir = os.path.abspath('.') + "/"
+
+  ## cd into testname's location
+  os.chdir(os.path.dirname(os.path.abspath(testpath)))
+
+  ## Remove directory portion of testname
+  testname = os.path.basename(testpath)
+
+  outputs = subprocess.Popen(COMMAND + ' ' + testname, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  
+  stdout_output = outputs.stdout.readlines()
+  stderr_output = outputs.stderr.readlines()
+
+  if len(stdout_output) == 0 and len(stderr_output) == 0:
+    printTest("Parse test", False, "NO ERROR", testpath)
+    ## Fail - Must have errors to pass
+    results['parse'][1] = results['parse'][1] + 1
+    results['fail']["NO ERROR"].append(testpath)
+
+  elif len(stderr_output) > 0:
+    printTest("Parse test", False, "STDERR", testpath)
+    ## Fail - Errors sent to stderr -> incorrect error.
+    results['parse'][1] = results['parse'][1] + 1
+    results['fail']["STDERR"].append(testpath)
+
+  else: # len(returned_lines) != 0:
+    if 'parse failed' in stdout_output[0] or 'ob0c' in COMMAND:
+      printTest("Parse test", True, "", testpath)
+      results['parse'][0] = results['parse'][0] + 1
+      success = True
+    else: # 'parse_failed' not in returned_lines[0]
+      printTest("Parse test", False, "WRONG ERR", testpath)
+      results['parse'][1] = results['parse'][1] + 1
+      results['fail']["WRONG ERR"].append(testpath)
+  
+  ## cd back to where we started
+  os.chdir(os.path.dirname(cur_dir))
+
+  return success
+
+
+def runNameTypeTest(testpath, results):
+  success = False
+
+  ## Remember where we started
+  cur_dir = os.path.abspath('.') + "/"
+
+  ## cd into testname's location
+  os.chdir(os.path.dirname(os.path.abspath(testpath)))
+
+  ## Remove directory portion of testname
+  testname = os.path.basename(testpath)
+
+  outputs = subprocess.Popen(COMMAND + ' ' + testname, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+  stdout_output = outputs.stdout.readlines()
+  stderr_output = outputs.stderr.readlines()
+
+  if len(stdout_output) == 0 and len(stderr_output) == 0:
+    printTest("Name or Type Test", False, "NO ERROR", testpath)
+    ## Fail - Must have errors to pass
+    results['name_type'][1] = results['name_type'][1] + 1
+    results['fail']["NO ERROR"].append(testpath)
+
+  elif len(stderr_output) > 0:
+    printTest("Name or Type Test", False, "STDERR", testpath)
+    ## Fail - Errors sent to stderr -> incorrect error.
+    results['name_type'][1] = results['name_type'][1] + 1
+    results['fail']["STDERR"].append(testpath)
+
+  else: # len(returned_lines) != 0:
+
+    match = None # Flag to hold match object
+    i = 0 # Current index of returned_lines
+
+    # Regex to find line number in returned error
+    line_pattern = r'(?:.*[Ll]ine[:]?\s+)?(\d+)'
+
+    while match == None and i < len(stdout_output):
+      match = re.match(line_pattern, stdout_output[i])
+      i += 1
+    if not match:
+      print "Error: Can't detect line number in returned error"
+      print "File :", testpath
+      sys.exit(0)
+    else: # match
+      # Found a match in the error!
+      found_line = match.group(1)
+      
+      # Regex to find a match in the filename...
+      file_pattern = '(' + found_line + r')_.*\.ob'
+
+      if re.match(file_pattern, testname):
+        # Line found in error matches line found in filename!
+        printTest("Name or Type Test", True, "", testpath)
+        results['name_type'][0] = results['name_type'][0] + 1
+        success = True
+
+      else: # not re.match(file_pattern, testname)
+        # Line found in error doesn't match line found in filename
+        printTest("Name or Type Test", False, "WRONG LINE", testpath)
+        results['name_type'][1] = results['name_type'][1] + 1
+        results['fail']["WRONG LINE"].append(testpath)
+  
+  ## cd back to where we started
+  os.chdir(os.path.dirname(cur_dir))
+
+  return success
+
+
+def compareLifted(lifted, lifted_lifted, results):
+  success = False
+  
+  if os.path.exists(lifted):
+    if os.path.exists(lifted_lifted):
+      comparison = filecmp.cmp(lifted, lifted_lifted)
+      
+      if comparison:
+        printTest("Compare Lifted", True, "", lifted_lifted)
+        results['lifted_cmp'][0] = results['lifted_cmp'][0] + 1
+        success = True
+
+      else: # comparison == False
+        printTest("Compare Lifted", False, "DIFFERENT", lifted_lifted)
+        results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
+        results['fail']["LIFTED ERR"].append(testpath)
+
+    else: # not os.path.exists(lifted_lifted)
+      printTest("Compare Lifted", False, "NO FILE 2", lifted_lifted)
+  else: # not os.path.exists(lifted)
+    printTest("Compare Lifted", False, "NO FILE 1", lifted)
+  
+  return success
+
+
+def runCCode(testpath, results):
+  success = False
+
+  ## Check for existence
+  if os.path.exists(testpath):
+
+    ## Remember where we started
+    cur_dir = os.path.abspath('.') + "/"
+
+    ## cd into testname's location
+    os.chdir(os.path.dirname(os.path.abspath(testpath)))
+
+    ## Remove directory portion of testname
+    testname = os.path.basename(testpath)
+
+    exit_code = os.system('gcc ' + testname)
+
+    if exit_code != 0:
+      printTest("Positive Run C", False, "GCC ERR", testpath)
+      results['fail']['GCC ERR'].append(testpath)
+    else: #exit_code == 0
+      printTest("Positive Run C", True, "", testpath)
+      success = True
+
+    os.chdir(os.path.dirname(cur_dir))
+
+  else:
+    printTest("Positive Run C", False, "NO C FILE", testpath)
+    results['fail']['NO C FILE'].append(testpath)
+
+  return success
+
+
+def printResults(results):
+  if len(results['fail']) > 0:
+    print
+    print 'Failures:'
+    for fail_group in results['fail']:
+      if len(results['fail'][fail_group]) > 0:
+        print '\t' + fail_group
+        for f in results['fail'][fail_group]:
+          print '\t\t' + f
+  print 
+  print 'Positive tests:'
+  print '\tPass: ' + str(results['positive'][0])
+  print '\tFail: ' + str(results['positive'][1])
+  print
+  print 'Name or type tests:'
+  print '\tPass: ' + str(results['name_type'][0])
+  print '\tFail: ' + str(results['name_type'][1])
+  print
+  print 'Parse tests:'
+  print '\tPass: ' + str(results['parse'][0])
+  print '\tFail: ' + str(results['parse'][1])
+  print
+  print 'Summary:'
+  print '\tPass: ' + str(results['positive'][0] + 
+                         results['name_type'][0] +
+                         results['parse'][0])
+  print '\tFail: ' + str(results['positive'][1] + 
+                         results['name_type'][1] +
+                         results['parse'][1])
+def main():
+  global COMMAND
+  global TESTS
+  global LEVEL
+  global CODEGEN
+
+  if len(sys.argv) > 1:
+    ## Is the level specified?
+    artifact_pattern = r'-?(A(?:[134]|2[ab]))'
+    level_pattern = r'-?L(\d+)'
+    for i in sys.argv[1:]:
+      #m = re.match(level_pattern, i)
+      m = re.match(artifact_pattern, i)
+      if m:
+        artifact = m.group(1)
+        sys.argv.remove(m.group(0))
+        if artifact == 'A1':
+          LEVEL = ['L1', 'L2']
+          TESTS = ['T1', 'T2']
+        elif artifact == 'A2a':
+          LEVEL = ['L1', 'L2', 'L3']
+          TESTS = ['T1', 'T2']
+        elif artifact == 'A2b':
+          LEVEL = ['L1', 'L2']
+          TESTS = ['T1', 'T2', 'T3']
+        elif artifact == 'A3':
+          LEVEL = ['L1', 'L2', 'L3']
+          TESTS = ['T1', 'T2', 'T3']
+        elif artifact == 'A4':
+          LEVEL = ['L1', 'L2', 'L3', 'L4']
+          TESTS = ['T1', 'T2', 'T3', 'T5a']
+        else:
+          print "Error: Unrecognized artifact:", artifact
+          sys.exit(0)
+
+    if not LEVEL or not TESTS:
+      print 'LEVEL: ALL'
+      LEVEL = ['L1', 'L2', 'L3', 'L4']
+      TESTS = ['T1', 'T2', 'T3', 'T5a']
+
+    ## Is codegen specified?
+    if '-codegen' in sys.argv:
+      CODEGEN = True
+      sys.argv.remove('-codegen')
+
+    ## What's left is the running command
+    COMMAND = " ".join(sys.argv[1:])
+  else:
+    print "Please supply commands to run compiler"
+    sys.exit(0)
+
+  PATH_TO_TEST = '../tests/'
+  all_tests = []
+  ## results[test_type] = [num_pass, num_fail]
+  ## results['fail'][fail_type] = [fail_path0, fail_path1, ...]
+  results = {'positive':[0,0], 'name_type':[0,0], 'parse':[0,0], 'lifted_cmp':[0,0], 
+             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[]} }
+
+
+  #####################################################################
+  # Find all Oberon0 files within PATH_TO_TEST
+  #
+  # Files are located in tests/positive/L*/*.ob and tests/negative/L*/*_errors/*.ob
+  #
+  # Within the path, the following items are found:
+  #  * Location of the test
+  #  * Whether the test is positive or negative
+  #  * The level of the test (L1, L2, etc)
+  #####################################################################
+  for test_dir in glob.glob(os.path.join(PATH_TO_TEST, "*/positive/L*/*.ob*")):
+    if not '_pp' in test_dir and not '_lifted' in test_dir:
+      all_tests.append(test_dir)
+
+
+  for test_dir in glob.glob(os.path.join(PATH_TO_TEST, "*/negative/*_errors/L*/*.ob*")):
+    if not '_pp' in test_dir and not '_lifted' in test_dir:
+      all_tests.append(test_dir)
+
+  all_tests.sort()
+
+  #####################################################################
+  # Run each test
+  #####################################################################
+  for test in all_tests:
+
+    for l in LEVEL:
+      if l in test:
+        ## Correct level number, need to check test number
+        errors = True
+        if 'negative' in test:
+          ## T1 -> run tests in parse_errors
+          if 'T1' in TESTS and 'parse_errors' in test:
+            runParseTest(test, results)
+
+          ## T2 -> run tests in name_errors
+          elif 'T2' in TESTS and 'name_errors' in test:
+            runNameTypeTest(test, results)
+          
+          ## T3 -> run tests in type_errors
+          elif 'T3' in TESTS and 'type_errors' in test:
+            runNameTypeTest(test, results)
+
+        elif 'positive' in test:
+          success = runPositiveTest(test, results)
+
+          ## if base test succeeds and -codegen in args
+          if success and (CODEGEN or 'L3' in LEVEL):
+            splitext = os.path.splitext(test)
+            test_lifted = splitext[0] + '_lifted' + splitext[1]
+            test_lifted_lifted = splitext[0] + '_lifted_lifted' + splitext[1]
+
+            ## run the compiler on file_lifted.ob(0?), check for no errors
+            lifted_success = runPositiveTest(test_lifted, results)
+            if lifted_success:
+              compareLifted(test_lifted, test_lifted_lifted, results)
+
+            ## run gcc on file.c, check for zero value return code
+            ## TODO: Test C code
+            #if 'T5a' in TESTS:
+            #  test_c = splitext[0] + '.c'
+            #  runCCode(test_c, results)
+
+        else: # 'negative' not in test and 'positive' not in test
+          print "Supertest error, Unknown test:", test
+
+  printResults(results)
+
+
+if __name__ == "__main__":
+  main()

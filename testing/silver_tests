@@ -1,0 +1,9 @@
+#!/bin/bash
+
+## To run artifact-specific tests, use the '-A#' option (sub 1, 2a, 2b, 3, or 4 for '#')
+
+## Avoid relative paths
+JAR=`readlink -f ../L4_T5.jar`
+
+## Run supertest.py with silver compiler
+python supertest.py $@ java -jar $JAR
