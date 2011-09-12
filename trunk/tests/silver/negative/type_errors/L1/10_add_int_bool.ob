@@ -1,0 +1,11 @@
+MODULE AddIntBool;
+
+VAR i: INTEGER;
+    b: BOOLEAN;
+    ok: BOOLEAN; (* Ensures errors occur on the correct line *)
+
+BEGIN
+  i := 2;
+  b := TRUE;
+  i := i + b; ok := TRUE;
+END AddIntBool.

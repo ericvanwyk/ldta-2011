@@ -1,0 +1,5 @@
+MODULE Reserved;
+
+VAR RECORD: INTEGER;
+
+END Reserved.

@@ -1,0 +1,9 @@
+MODULE DuplicateProcs;
+
+  PROCEDURE FOO;
+  END FOO;
+
+  PROCEDURE FOO;
+  END FOO;
+
+END DuplicateProcs.

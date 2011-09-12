@@ -1,0 +1,7 @@
+MODULE ConstVarSame;
+
+CONST x=42;
+
+VAR x: INTEGER;
+
+END ConstVarSame.

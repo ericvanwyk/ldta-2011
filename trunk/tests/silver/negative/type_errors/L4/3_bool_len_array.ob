@@ -1,0 +1,5 @@
+MODULE BoolLenArray;
+
+TYPE MYARRAY = ARRAY FALSE OF INTEGER;
+
+END BoolLenArray.

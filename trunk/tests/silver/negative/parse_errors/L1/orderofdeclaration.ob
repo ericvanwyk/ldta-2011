@@ -1,0 +1,9 @@
+MODULE Ood;
+
+VAR y: INTEGER;
+CONST x := 3;
+
+BEGIN
+  y := 4;
+  y := x + y;
+END Ood.

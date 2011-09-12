@@ -1,0 +1,12 @@
+MODULE boolcase;
+
+VAR y: INTEGER;
+    b: BOOLEAN;
+
+BEGIN
+  b := TRUE;
+  CASE b OF
+    0..19: y := 0
+  | 20: y := 1
+  END
+END boolcase.

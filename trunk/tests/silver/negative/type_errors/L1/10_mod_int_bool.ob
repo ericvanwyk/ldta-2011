@@ -1,0 +1,11 @@
+MODULE ModIntBool;
+
+VAR i: INTEGER;
+    b: BOOLEAN;
+    ok: BOOLEAN; (* Ensures errors occur on the correct line *)
+
+BEGIN
+  i := 42;
+  b := TRUE;
+  i := i MOD b; ok := TRUE;
+END ModIntBool.

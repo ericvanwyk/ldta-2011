@@ -1,0 +1,8 @@
+MODULE TypeSameScope;
+
+TYPE STUFF = ARRAY 2 OF BOOLEAN;
+     STUFF = ARRAY 3 OF INTEGER;
+
+VAR b: STUFF;
+
+END TypeSameScope.

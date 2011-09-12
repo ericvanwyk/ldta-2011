@@ -1,0 +1,5 @@
+MODULE Ident;
+
+VAR r, value42, 38value: INTEGER;
+
+END Ident.

@@ -1,0 +1,12 @@
+MODULE IfNoThen;
+
+VAR b: BOOLEAN;
+    x: INTEGER;
+
+BEGIN
+  IF b
+    x := 4
+  ELSE
+    x := 42
+  END
+END IfNoThen.

@@ -1,0 +1,6 @@
+MODULE DuplicateArrays;
+
+TYPE MYARRAY = ARRAY 3 OF INTEGER;
+     MYARRAY = ARRAY 42 OF INTEGER;
+
+END DuplicateArrays.

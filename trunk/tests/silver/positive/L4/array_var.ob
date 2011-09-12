@@ -1,0 +1,5 @@
+MODULE ArrayVar;
+
+VAR myArray: ARRAY 2 OF INTEGER;
+
+END ArrayVar.

@@ -1,0 +1,5 @@
+MODULE ReservedBy;
+
+VAR BY: INTEGER;
+
+END ReservedBy.

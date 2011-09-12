@@ -1,0 +1,11 @@
+MODULE WrongPropRecord;
+
+TYPE RecordTest = RECORD
+       foo: INTEGER
+     END;
+
+VAR x: RecordTest;
+
+BEGIN
+  x.bar := TRUE;
+END WrongPropRecord.

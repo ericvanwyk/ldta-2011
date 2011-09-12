@@ -1,0 +1,12 @@
+MODULE case;
+
+VAR x,y: INTEGER;
+
+BEGIN
+  x := 0;
+  x := 1;
+  CASE x OF
+    0..19: y := 0
+  | 20: y := 1
+  END
+END case.

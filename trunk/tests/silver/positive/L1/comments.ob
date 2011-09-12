@@ -1,0 +1,11 @@
+MODULE Comments;
+
+VAR x: INTEGER;
+
+BEGIN
+  (* This is a comment *)
+  x := 3;
+  (* This has 
+      many lines *)
+  x := x + 4;
+END Comments.

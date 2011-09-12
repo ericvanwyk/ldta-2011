@@ -1,0 +1,10 @@
+MODULE BoolUpLimFor;
+
+VAR x,y: INTEGER;
+
+BEGIN
+  x := 42;
+  FOR y := 0 TO TRUE DO
+    x := x + 1
+  END
+END BoolUpLimFor.

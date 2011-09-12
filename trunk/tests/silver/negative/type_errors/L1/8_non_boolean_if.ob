@@ -1,0 +1,10 @@
+MODULE NonBooleanIf;
+
+VAR x: INTEGER;
+    ok: INTEGER;
+
+BEGIN
+  x := 13;
+  IF x THEN ok := 42
+  END
+END NonBooleanIf.

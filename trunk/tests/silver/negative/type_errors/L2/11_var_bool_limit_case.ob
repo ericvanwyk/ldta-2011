@@ -1,0 +1,13 @@
+MODULE LimitCase;
+
+VAR x,y: INTEGER;
+    b: BOOLEAN;
+
+BEGIN
+  x := 0;
+  b := TRUE;
+  CASE x OF
+    0..19: y := 0
+  | b: y := 1
+  END
+END LimitCase.

@@ -1,0 +1,15 @@
+MODULE DupRecords;
+
+TYPE RecordTest = RECORD
+       foo: INTEGER;
+       bar: BOOLEAN
+     END;
+
+     RecordTest = RECORD
+       foo: INTEGER;
+       bar: BOOLEAN
+     END;
+
+VAR r: RecordTest;
+
+END DupRecords.

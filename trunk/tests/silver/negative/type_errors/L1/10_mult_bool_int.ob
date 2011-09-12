@@ -1,0 +1,11 @@
+MODULE MultBoolInt;
+
+VAR b: BOOLEAN;
+    i: INTEGER;
+    ok: BOOLEAN; (* Ensures errors occur on the correct line *)
+
+BEGIN
+  b := TRUE;
+  i := 2;
+  b := b * i; ok := TRUE;
+END MultBoolInt.

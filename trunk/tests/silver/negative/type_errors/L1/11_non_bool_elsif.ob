@@ -1,0 +1,13 @@
+MODULE NonBoolElsif;
+
+VAR x: INTEGER;
+    ok: INTEGER;
+
+BEGIN
+  x := 13;
+  IF x = 4
+  THEN
+    ok := 42
+  ELSIF x THEN ok := 0
+  END
+END NonBoolElsif.

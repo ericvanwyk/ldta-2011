@@ -1,0 +1,13 @@
+MODULE Record;
+
+TYPE RecordTest = RECORD
+       foo: INTEGER;
+       bar: BOOLEAN
+     END;
+
+VAR r: RecordTest;
+
+BEGIN
+  r.foo := 42;
+  r.bar := TRUE;
+END Record.

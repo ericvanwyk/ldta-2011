@@ -1,0 +1,15 @@
+MODULE NonBoolWhile;
+
+VAR i,x,y: INTEGER;
+    ok: INTEGER;
+
+BEGIN
+  x := 2;
+  y := 3;
+  i := 0;
+  WHILE i DO ok := 0;
+    x := x * y;
+    y := y * x;
+    i := i + 1
+  END
+END NonBoolWhile.

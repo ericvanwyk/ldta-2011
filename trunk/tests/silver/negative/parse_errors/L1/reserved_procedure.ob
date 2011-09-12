@@ -1,0 +1,5 @@
+MODULE Reserved;
+
+VAR PROCEDURE: INTEGER;
+
+END Reserved.

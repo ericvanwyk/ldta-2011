@@ -1,0 +1,12 @@
+MODULE VarBoolHiLimFor;
+
+VAR x,y: INTEGER;
+    l: BOOLEAN;
+
+BEGIN
+  x := 42;
+  l := TRUE;
+  FOR y := 0 TO l DO
+    x := x + 1
+  END
+END VarBoolHiLimFor.

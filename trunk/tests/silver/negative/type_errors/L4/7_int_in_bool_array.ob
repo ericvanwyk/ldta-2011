@@ -1,0 +1,8 @@
+MODULE IntInBoolArray;
+
+VAR MyArray: ARRAY 3 OF BOOLEAN;
+    ok: BOOLEAN; (* Ensures errors occur on the correct line *)
+
+BEGIN
+  MyArray[0] := 42; ok := TRUE;
+END IntInBoolArray.
