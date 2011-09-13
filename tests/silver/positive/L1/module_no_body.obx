@@ -1,7 +1,0 @@
-MODULE M ;
-
-  VAR a, b : INTEGER;
-
-      p, q : BOOL;
-
-END M.
