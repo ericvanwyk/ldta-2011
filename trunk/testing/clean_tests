@@ -2,7 +2,6 @@
 
 rm ../tests/*/positive/L*/*_pp.ob
 rm ../tests/*/positive/L*/*_lifted.ob
-rm ../tests/*/positive/L*/*_lifted_lifted.ob
 rm ../tests/*/positive/L*/*.c
 rm ../tests/*/positive/L*/*.stdout
 rm ../tests/*/positive/L*/*.errors
