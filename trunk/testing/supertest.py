@@ -99,14 +99,15 @@ def runParseTest(testpath, results):
     results['fail']["STDERR"].append(testpath)
 
   else: # len(returned_lines) != 0:
-    if 'parse failed' in stdout_output[0] or 'ob0c' in COMMAND:
-      printTest("Parse test", True, "", testpath)
-      results['parse'][0] = results['parse'][0] + 1
-      success = True
-    else: # 'parse_failed' not in returned_lines[0]
+    if 'parse failed' not in stdout_output[0] and 'ob0c' not in COMMAND:
       printTest("Parse test", False, "WRONG ERR", testpath)
       results['parse'][1] = results['parse'][1] + 1
       results['fail']["WRONG ERR"].append(testpath)
+
+    else: #'parse failed' in stdout_output[0] or 'ob0c' in COMMAND:
+      printTest("Parse test", True, "", testpath)
+      results['parse'][0] = results['parse'][0] + 1
+      success = True
   
   ## cd back to where we started
   os.chdir(os.path.dirname(cur_dir))
@@ -165,17 +166,18 @@ def runNameTypeTest(testpath, results):
       # Regex to find a match in the filename...
       file_pattern = '(' + found_line + r')_.*\.ob'
 
-      if re.match(file_pattern, testname):
+      if not re.match(file_pattern, testname):
+        # Line found in error doesn't match line found in filename
+        printTest("Name or Type Test", False, "WRONG LINE", testpath)
+        results['name_type'][1] = results['name_type'][1] + 1
+        results['fail']["WRONG LINE"].append(testpath)
+
+      else: #re.match(file_pattern, testname)
         # Line found in error matches line found in filename!
         printTest("Name or Type Test", True, "", testpath)
         results['name_type'][0] = results['name_type'][0] + 1
         success = True
 
-      else: # not re.match(file_pattern, testname)
-        # Line found in error doesn't match line found in filename
-        printTest("Name or Type Test", False, "WRONG LINE", testpath)
-        results['name_type'][1] = results['name_type'][1] + 1
-        results['fail']["WRONG LINE"].append(testpath)
   
   ## cd back to where we started
   os.chdir(os.path.dirname(cur_dir))
@@ -186,24 +188,29 @@ def runNameTypeTest(testpath, results):
 def compareLifted(lifted, lifted_lifted, results):
   success = False
   
-  if os.path.exists(lifted):
-    if os.path.exists(lifted_lifted):
+  if not os.path.exists(lifted):
+    printTest("Compare Lifted", False, "NO FILE 1", lifted)
+    results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
+    results['fail']["LIFTED ERR"].append(testpath)
+
+  else: #os.path.exists(lifted)
+    if not os.path.exists(lifted_lifted):
+      printTest("Compare Lifted", False, "NO FILE 2", lifted_lifted)
+      results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
+      results['fail']["LIFTED ERR"].append(testpath)
+
+    else: #os.path.exists(lifted_lifted):
       comparison = filecmp.cmp(lifted, lifted_lifted)
       
-      if comparison:
-        printTest("Compare Lifted", True, "", lifted_lifted)
-        results['lifted_cmp'][0] = results['lifted_cmp'][0] + 1
-        success = True
-
-      else: # comparison == False
+      if not comparison:
         printTest("Compare Lifted", False, "DIFFERENT", lifted_lifted)
         results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
         results['fail']["LIFTED ERR"].append(testpath)
 
-    else: # not os.path.exists(lifted_lifted)
-      printTest("Compare Lifted", False, "NO FILE 2", lifted_lifted)
-  else: # not os.path.exists(lifted)
-    printTest("Compare Lifted", False, "NO FILE 1", lifted)
+      else: # comparison == True
+        printTest("Compare Lifted", True, "", lifted_lifted)
+        results['lifted_cmp'][0] = results['lifted_cmp'][0] + 1
+        success = True
   
   return success
 
@@ -212,7 +219,11 @@ def runCCode(testpath, results):
   success = False
 
   ## Check for existence
-  if os.path.exists(testpath):
+  if not os.path.exists(testpath):
+    printTest("Positive Run C", False, "NO C FILE", testpath)
+    results['compile_c'][1] = results['compile_c'][1] + 1
+    results['fail']['NO C FILE'].append(testpath)
+  else: #os.path.exists(testpath):
 
     ## Remember where we started
     cur_dir = os.path.abspath('.') + "/"
@@ -222,54 +233,107 @@ def runCCode(testpath, results):
 
     ## Remove directory portion of testname
     testname = os.path.basename(testpath)
+    executable = os.path.splitext(testname)[0] + '.a'
 
-    exit_code = os.system('gcc ' + testname)
+    exit_code = os.system('gcc ' + testname + ' -o ' + executable)
 
     if exit_code != 0:
-      printTest("Positive Run C", False, "GCC ERR", testpath)
+      printTest("Positive GCC", False, "GCC ERR: " + str(exit_code), testpath)
+      results['compile_c'][1] = results['compile_c'][1] + 1
       results['fail']['GCC ERR'].append(testpath)
     else: #exit_code == 0
-      printTest("Positive Run C", True, "", testpath)
-      success = True
+      printTest("Positive GCC", True, "", testpath)
+      results['compile_c'][0] = results['compile_c'][0] + 1
+
+      stdout_file = os.path.splitext(testname)[0] + '.stdout'
+
+      ## Run the compiled executable
+      outputs = subprocess.Popen('./' + executable + ' >! ' + stdout_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+      ## Not needed; redirected to stdout_file
+      #stdout_output = outputs.stdout.readlines()
+
+      stderr_output = outputs.stderr.readlines()
+
+      if len(stderr_output) > 0:
+        printTest("Positive Run", False, "STDERR", executable)
+        results['run_c'][1] = results['run_c'][1] + 1
+        results['fail']['STDERR'].append(testpath)
+      else:
+        printTest("Positive Run", True, "", testpath)
+        results['run_c'][0] = results['run_c'][0] + 1
+
+        expected = os.path.splitext(testname)[0] + '.expected'
+
+        ## Compare stdout_file to .expected
+        if not os.path.exists(expected):
+          printTest("Compare Expected", False, "NO .expected FILE", expected)
+          results['expected_cmp'][1] = results['expected_cmp'][1] + 1
+          results['fail']['NO EXP FILE'].append(testpath)
+        else: #os.path.exists(expected)
+          if not os.path.exists(stdout_file):
+            printTest("Compare Expected", False, "NO STDOUT FILE", stdout_file)
+            results['expected_cmp'][1] = results['expected_cmp'][1] + 1
+            results['fail']['NO STDOUT FILE'].append(testpath)
+          else: #os.path.exists(stdout_file)
+            comparison = filecmp.cmp(expected, stdout_file)
+
+            if not comparison:
+              printTest("Compare Expected", False, "EXP CMP", stdout_file)
+              results['expected_cmp'][1] = results['expected_cmp'][1] + 1
+              results['fail']["EXP CMP"].append(testpath)
+            else: #comparison == True
+              printTest("Compare Expected", True, "", stdout_file)
+              results['expected_cmp'][0] = results['expected_cmp'][0] + 1
+              success = True
 
     os.chdir(os.path.dirname(cur_dir))
 
-  else:
-    printTest("Positive Run C", False, "NO C FILE", testpath)
-    results['fail']['NO C FILE'].append(testpath)
 
   return success
 
 
 def printResults(results):
+  text = ""
   if len(results['fail']) > 0:
-    print
-    print 'Failures:'
+    text += '\n'
+    text += 'Failures:' + '\n' 
     for fail_group in results['fail']:
       if len(results['fail'][fail_group]) > 0:
-        print '\t' + fail_group
+        text += '\t' + fail_group + '\n' 
         for f in results['fail'][fail_group]:
-          print '\t\t' + f
-  print 
-  print 'Positive tests:'
-  print '\tPass: ' + str(results['positive'][0])
-  print '\tFail: ' + str(results['positive'][1])
-  print
-  print 'Name or type tests:'
-  print '\tPass: ' + str(results['name_type'][0])
-  print '\tFail: ' + str(results['name_type'][1])
-  print
-  print 'Parse tests:'
-  print '\tPass: ' + str(results['parse'][0])
-  print '\tFail: ' + str(results['parse'][1])
-  print
-  print 'Summary:'
-  print '\tPass: ' + str(results['positive'][0] + 
+          text += '\t\t' + f + '\n' 
+  text += '\n' 
+  text += 'Positive tests:\tLifted compare:' + '\tCompare Expected:' + '\n' 
+  text += 'Pass: ' + str(results['positive'][0]) + '\t\tPass: ' + str(results['lifted_cmp'][0]) + '\t\tPass: ' + str(results['expected_cmp'][0]) + '\n' 
+  text += 'Fail: ' + str(results['positive'][1]) + '\t\tFail: ' + str(results['lifted_cmp'][1]) + '\t\tFail: ' + str(results['expected_cmp'][1]) + '\n' 
+  text += '\n'
+  text += 'Name or type tests:\tCompile C:' + '\n' 
+  text += 'Pass: ' + str(results['name_type'][0]) + '\t\tPass: ' + str(results['compile_c'][0]) + '\n' 
+  text += 'Fail: ' + str(results['name_type'][1]) + '\t\tFail: ' + str(results['compile_c'][1]) + '\n' 
+  text += '\n'
+  text += 'Parse tests:\tRun C:' + '\n' 
+  text += 'Pass: ' + str(results['parse'][0]) + '\t\tPass: ' + str(results['run_c'][0])  + '\n' 
+  text += 'Fail: ' + str(results['parse'][1]) + '\t\tPass: ' + str(results['run_c'][1])  + '\n' 
+  text += '\n'
+  text += 'Summary:' + '\n' 
+  text += 'Pass: ' + str(results['positive'][0] + 
                          results['name_type'][0] +
-                         results['parse'][0])
-  print '\tFail: ' + str(results['positive'][1] + 
+                         results['parse'][0] +
+                         results['lifted_cmp'][0] +
+                         results['compile_c'][0] +
+                         results['run_c'][0] +
+                         results['expected_cmp'][0]) + '\n' 
+  text += 'Fail: ' + str(results['positive'][1] + 
                          results['name_type'][1] +
-                         results['parse'][1])
+                         results['parse'][1] +
+                         results['lifted_cmp'][1] +
+                         results['compile_c'][1] +
+                         results['run_c'][1] +
+                         results['expected_cmp'][1]) + '\n' 
+
+  print text.expandtabs(12)
+
 def main():
   global COMMAND
   global TESTS
@@ -325,8 +389,8 @@ def main():
   all_tests = []
   ## results[test_type] = [num_pass, num_fail]
   ## results['fail'][fail_type] = [fail_path0, fail_path1, ...]
-  results = {'positive':[0,0], 'name_type':[0,0], 'parse':[0,0], 'lifted_cmp':[0,0], 
-             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[]} }
+  results = {'positive':[0,0], 'name_type':[0,0], 'parse':[0,0], 'lifted_cmp':[0,0], 'compile_c':[0,0], 'run_c':[0,0], 'expected_cmp':[0,0],
+             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[], "NO EXP FILE":[], "NO STDOUT FILE":[], "EXP CMP":[]} }
 
 
   #####################################################################
@@ -388,9 +452,9 @@ def main():
 
             ## run gcc on file.c, check for zero value return code
             ## TODO: Test C code
-            #if 'T5a' in TESTS:
-            #  test_c = splitext[0] + '.c'
-            #  runCCode(test_c, results)
+            if 'T5a' in TESTS:
+              test_c = splitext[0] + '.c'
+              success = runCCode(test_c, results)
 
         else: # 'negative' not in test and 'positive' not in test
           print "Supertest error, Unknown test:", test
