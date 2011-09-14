@@ -1,0 +1,16 @@
+MODULE ArrayInProc;
+
+TYPE MYARRAY = ARRAY 3 OF INTEGER;
+
+VAR a: MYARRAY;
+
+PROCEDURE FOO(b: MYARRAY);
+  BEGIN
+    b[1] := 42
+  END FOO;
+
+BEGIN
+  a[0] := 3;
+  FOO(a);
+
+END ArrayInProc.

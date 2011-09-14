@@ -1,0 +1,10 @@
+MODULE GlobalVarProc;
+
+VAR x: INTEGER;
+
+PROCEDURE FOO;
+  BEGIN
+    x := 42;
+  END FOO;
+
+END GlobalVarProc.
