@@ -13,5 +13,10 @@ BEGIN
     z := 42
   ELSE
     z := 0
-  END
+  END;
+  
+  Write(x); WriteLn();
+  Write(y); WriteLn();
+  Write(z); WriteLn();
+
 END IfElsif.
