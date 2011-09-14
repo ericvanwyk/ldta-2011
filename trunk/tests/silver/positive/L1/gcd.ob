@@ -13,6 +13,9 @@ BEGIN
       b := b - a
     END
   END ;
+  
+  Write(a); WriteLn();
+  Write(b); WriteLn();
 
 END Gcd.
 
