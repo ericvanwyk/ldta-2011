@@ -1,0 +1,8 @@
+MODULE NonVarInProc;
+
+PROCEDURE FOO(b: INTEGER);
+  BEGIN
+    b := 42
+  END FOO;
+
+END NonVarInProc.
