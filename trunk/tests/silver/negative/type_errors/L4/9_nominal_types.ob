@@ -1,0 +1,11 @@
+MODULE NominalTyping;
+  TYPE FOO = ARRAY 2 OF INTEGER;
+       BAR = ARRAY 2 OF INTEGER;
+  PROCEDURE One(VAR a: FOO);
+    PROCEDURE Two(VAR b: BAR);
+    BEGIN
+    END Two;
+  BEGIN
+    Two(a);
+  END One;
+END NominalTyping.
