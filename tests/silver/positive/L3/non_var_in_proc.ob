@@ -1,8 +1,16 @@
 MODULE NonVarInProc;
 
+VAR x: INTEGER;
+
 PROCEDURE FOO(b: INTEGER);
   BEGIN
-    b := 42
+    Write(b); WriteLn;
+    b := 42;
+    Write(b); WriteLn;
   END FOO;
 
+BEGIN
+  x := 0;
+  FOO(x);
+  Write(x); WriteLn;
 END NonVarInProc.

@@ -4,7 +4,11 @@ CONST x = 42;
 
 PROCEDURE f;
   CONST x = 40;
-  
+  BEGIN
+    Write(x); WriteLn;
   END f;
-
+BEGIN
+  f;
+  Write(x); WriteLn;
+  f;
 END ConstDiffScope.

@@ -3,9 +3,12 @@ MODULE Comments;
 VAR x: INTEGER;
 
 BEGIN
+  x := 0;
   (* This is a comment *)
   x := 3;
   (* This has 
       many lines *)
   x := x + 4;
+  
+  Write(x); WriteLn
 END Comments.

@@ -10,4 +10,5 @@ VAR r: RecordTest;
 BEGIN
   r.foo := 42;
   r.bar := TRUE;
+  Write(r.foo); WriteLn
 END Record.

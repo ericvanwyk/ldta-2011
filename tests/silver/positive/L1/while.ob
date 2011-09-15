@@ -6,10 +6,14 @@ BEGIN
   x := 2;
   y := 3;
   i := 0;
-  WHILE i < 10
+  WHILE i < 3
   DO
     x := x * y;
     y := y * x;
     i := i + 1
-  END
+  END;
+  
+  Write(x); WriteLn;
+  Write(y); WriteLn;
+  Write(i); WriteLn;
 END While.

@@ -9,4 +9,6 @@ BEGIN
     x := x + 1
   END;
 
+  Write(x); WriteLn;
+
 END ForLoop.
