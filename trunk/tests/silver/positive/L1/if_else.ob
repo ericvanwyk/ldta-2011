@@ -4,10 +4,14 @@ VAR b: BOOLEAN;
     x: INTEGER;
 
 BEGIN
+  b := TRUE;
+  
   IF b 
   THEN
     x := 4
   ELSE
     x := 42
-  END
+  END;
+  
+  Write(x); WriteLn
 END IfElse.

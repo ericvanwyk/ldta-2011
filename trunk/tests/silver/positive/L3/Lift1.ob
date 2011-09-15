@@ -26,5 +26,8 @@ PROCEDURE p ;
  END p ;
 
 BEGIN
-  p 
+  p ;
+  Write(x); WriteLn;
+  Write(fres); WriteLn;
+  Write(gres); WriteLn;
 END Lift1.

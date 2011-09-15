@@ -8,5 +8,9 @@ BEGIN
   CASE x OF
     0..19: y := 0
   | 20: y := 1
-  END
+  END;
+  
+  Write(x); WriteLn;
+  Write(y); WriteLn;
+
 END case.

@@ -6,5 +6,9 @@ PROCEDURE FOO;
   BEGIN
     x := 42;
   END FOO;
-
+BEGIN
+  x := 0;
+  Write(x); WriteLn;
+  FOO;
+  Write(x); WriteLn;
 END GlobalVarProc.

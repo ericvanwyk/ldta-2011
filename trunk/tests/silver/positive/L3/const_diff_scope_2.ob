@@ -3,13 +3,16 @@ MODULE ConstDiffScope2;
 CONST x = 3;
 
 PROCEDURE foo;
-
   PROCEDURE bar;
-
     CONST x = 2;
-
+    BEGIN
+      Write(x); WriteLn;
     END bar;
-
+  BEGIN
+    Write(x); WriteLn;
+    bar;
+    Write(x); WriteLn;
   END foo;
-
+BEGIN
+foo
 END ConstDiffScope2.
