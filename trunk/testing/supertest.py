@@ -247,6 +247,9 @@ def runCCode(testpath, results):
 
       stdout_file = os.path.splitext(testname)[0] + '.stdout'
 
+      if os.path.exists(stdout_file):
+        os.remove(stdout_file)
+
       ## Run the compiled executable
       outputs = subprocess.Popen('./' + executable + ' > ' + stdout_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
