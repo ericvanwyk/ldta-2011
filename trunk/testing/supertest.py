@@ -443,7 +443,7 @@ def main():
           success = runPositiveTest(test, results)
 
           ## if base test succeeds and -codegen in args
-          if success and (CODEGEN or 'L3' in LEVEL):
+          if success and (CODEGEN or 'T5a' in TESTS):
             splitext = os.path.splitext(test)
             test_lifted = splitext[0] + '_lifted' + splitext[1]
             test_lifted_lifted = splitext[0] + '_lifted_lifted' + splitext[1]
@@ -454,10 +454,8 @@ def main():
               compareLifted(test_lifted, test_lifted_lifted, results)
 
             ## run gcc on file.c, check for zero value return code
-            ## TODO: Test C code
-            if 'T5a' in TESTS:
-              test_c = splitext[0] + '.c'
-              success = runCCode(test_c, results)
+            test_c = splitext[0] + '.c'
+            runCCode(test_c, results)
 
         else: # 'negative' not in test and 'positive' not in test
           print "Supertest error, Unknown test:", test

@@ -8,6 +8,4 @@ rm ../tests/*/positive/L*/*.stdout
 rm ../tests/*/positive/L*/*.errors
 
 rm ../tests/*/negative/*_errors/L*/*_pp.ob
-rm ../tests/*/negative/*_errors/L*/*_lifted.ob
-rm ../tests/*/negative/*_errors/L*/*.c
 rm ../tests/*/negative/*_errors/L*/*.errors
