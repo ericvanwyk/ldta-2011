@@ -1,0 +1,18 @@
+MODULE TestModule;
+	CONST SIZE = 10;
+	TYPE t1 = ARRAY SIZE OF INTEGER;
+		 t2 = RECORD
+				v : t1;
+				n : INTEGER
+			END;
+		 t3 = ARRAY SIZE OF t2;
+	VAR a : t2;
+		b : t3;
+BEGIN
+	a.v[5] := 1;
+	a.n := 2;
+	b[0].n := 3;
+	b[0].v[0] := 4;
+
+	b[SIZE].n := 5      (* Out of bounds *)
+END TestModule.

@@ -1,0 +1,11 @@
+MODULE TestModule;
+	PROCEDURE f(a, b : INTEGER; c : INTEGER);
+	BEGIN
+		Write(a);
+		Write(b);
+		Write(c)	
+	END f;
+BEGIN
+	f(1, 2, 3);     (* OK *)
+	f(1, 2)         (* NOT OK *)
+END TestModule.

@@ -1,0 +1,9 @@
+MODULE TestModule;
+    VAR i : INTEGER;
+BEGIN
+    CASE 10+i OF
+   	1:
+    | 2..3+1:
+    | 5..i+1:
+    END
+END TestModule.

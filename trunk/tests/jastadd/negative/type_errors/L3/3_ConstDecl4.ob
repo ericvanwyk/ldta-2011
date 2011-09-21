@@ -1,0 +1,5 @@
+MODULE TestModule;
+	PROCEDURE f();
+		CONST C = 2 * f;
+	END f;
+END TestModule.

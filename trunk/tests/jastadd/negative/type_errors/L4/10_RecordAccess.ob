@@ -1,0 +1,11 @@
+MODULE TestModule;
+	TYPE r = RECORD 
+				f : INTEGER
+			END;
+	VAR a : r;
+		b : INTEGER;
+BEGIN
+	a.f := b;      (* OK *)
+	b := a.f;      (* OK *)
+	b := a         (* NOT OK *)
+END TestModule. 

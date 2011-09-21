@@ -1,0 +1,10 @@
+MODULE TestModule;
+	VAR a : INTEGER;
+	PROCEDURE f(VAR a : INTEGER);
+	BEGIN
+		Write(a)
+	END f;
+BEGIN
+	f(a);   (* OK *)
+	f(1)    (* NOT OK *)
+END TestModule.

@@ -1,0 +1,7 @@
+MODULE TestModule;
+    PROCEDURE g(h : INTEGER);
+    	PROCEDURE h;           (* NOT OK *)
+    	END h;
+    END g;
+BEGIN
+END TestModule.

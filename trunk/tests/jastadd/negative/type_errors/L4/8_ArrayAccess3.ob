@@ -1,0 +1,9 @@
+MODULE TestModule;
+	VAR a : ARRAY 10 OF ARRAY 10 OF INTEGER;
+		b : INTEGER;
+BEGIN
+	a[0][0] := 1;       (* OK *)
+	b := 2;             (* OK *)
+	b := a[0][0] + 3;   (* OK *)
+	b := a[0] + 4 	    (* NOT OK *)
+END TestModule.

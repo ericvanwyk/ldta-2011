@@ -1,0 +1,3 @@
+MODULE TestModule;
+	VAR a : a;
+END TestModule.

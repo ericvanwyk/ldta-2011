@@ -1,0 +1,4 @@
+MODULE TestModule;
+	TYPE a = INTEGER;
+	VAR a : INTEGER;
+END TestModule.

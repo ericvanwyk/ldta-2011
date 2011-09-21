@@ -1,0 +1,5 @@
+MODULE TestModule;
+BEGIN
+	IF (1) & (1<2) THEN
+	END
+END TestModule.

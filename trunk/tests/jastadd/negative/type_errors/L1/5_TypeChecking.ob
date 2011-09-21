@@ -1,0 +1,6 @@
+MODULE TestModule;
+	VAR a : INTEGER;
+BEGIN
+	a := 1 + 2 + 3;
+	a := a < 2
+END TestModule.

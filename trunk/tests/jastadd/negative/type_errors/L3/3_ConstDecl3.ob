@@ -1,0 +1,5 @@
+MODULE TestModule;
+	PROCEDURE f(a : INTEGER);
+		CONST C = 2 * (a + 3);
+	END f;
+END TestModule.

@@ -1,0 +1,4 @@
+MODULE TestModule;
+	CONST C1 = 10 DIV 0;
+		C2 = C1 + 10;
+END TestModule.

@@ -1,0 +1,15 @@
+MODULE TestModule;
+    VAR a : INTEGER;
+    PROCEDURE f;
+    	VAR b : INTEGER;
+        PROCEDURE g(c : INTEGER);
+            VAR d : INTEGER;
+        BEGIN
+            a := 1;  (* OK *)
+            c := 2;  (* OK *)
+            d := 3;  (* OK *)
+            b := 4   (* NOT OK *)
+        END g;
+    END f;
+BEGIN
+END TestModule.

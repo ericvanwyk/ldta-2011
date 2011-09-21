@@ -1,0 +1,6 @@
+MODULE TestModule;
+    TYPE t = INTEGER;
+BEGIN
+    FOR t := 1 TO 2 DO
+    END
+END TestModule.

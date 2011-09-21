@@ -1,0 +1,5 @@
+MODULE TestModule;
+	CONST c = 1;
+BEGIN
+	c := c + 1
+END TestModule.
