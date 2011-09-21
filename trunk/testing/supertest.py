@@ -11,6 +11,7 @@ COMMAND = ""
 TESTS = None
 LEVEL = None
 CODEGEN = False
+REFERENCE_COMPILER = False
 
 #######################################################################
 # Runs all tests for Silver's implementation of Oberon0
@@ -48,12 +49,38 @@ def runPositiveTest(testpath, results):
 
   outputs = subprocess.Popen(COMMAND + ' ' + testname, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-  if len(outputs.stdout.readlines()) > 0:
+  stdout_output = outputs.stdout.readlines()
+  stderr_output = outputs.stderr.readlines()
+
+  if REFERENCE_COMPILER:
+    if len(stdout_output) > 0:
+      if 'line' in stdout_output[0]:
+        ## Error found
+        printTest("Positive test", False, "ERROR", testpath)
+        results['positive'][1] = results['positive'][1] + 1
+        results['fail']['ERROR'].append(testpath)
+      else: # 'line' not in stdout_output[0]
+        ## Output found, but no line -> just output
+        printTest("Positive test", True, "", testpath)
+        results['positive'][0] = results['positive'][0] + 1
+        success = True
+    elif len(stderr_output) > 0:
+      ## Stderr found
+      printTest("Positive test", False, "STDERR", testpath)
+      results['positive'][1] = results['positive'][1] + 1
+      results['fail']["STDERR"].append(testpath)
+    else: # len(stdout_output) <= 0
+      ## No output -> no error
+      printTest("Positive test", True, "", testpath)
+      results['positive'][0] = results['positive'][0] + 1
+      success = True
+
+  elif len(stdout_output) > 0:
     printTest("Positive test", False, "ERROR", testpath)
     results['positive'][1] = results['positive'][1] + 1
     results['fail']['ERROR'].append(testpath)
 
-  elif len(outputs.stderr.readlines()) > 0:
+  elif len(stderr_output) > 0:
     printTest("Positive test", False, "STDERR", testpath)
     results['positive'][1] = results['positive'][1] + 1
     results['fail']["STDERR"].append(testpath)
@@ -86,7 +113,33 @@ def runParseTest(testpath, results):
   stdout_output = outputs.stdout.readlines()
   stderr_output = outputs.stderr.readlines()
 
-  if len(stdout_output) == 0 and len(stderr_output) == 0:
+  if REFERENCE_COMPILER:
+    if len(stdout_output) > 0:
+      if 'line' in stdout_output[0]:
+        ## Error found
+        printTest("Parse test", True, "", testpath)
+        results['parse'][0] = results['parse'][0] + 1
+        success = True
+
+      else: # 'line' not in stdout_output[0]
+        ## No output -> no error
+        printTest("Parse test", False, "NO ERROR", testpath)
+        results['parse'][1] = results['parse'][1] + 1
+        results['fail']["NO ERROR"].append(testpath)
+
+    elif len(stderr_output) > 0:
+      ## Stderr found
+      printTest("Parse test", False, "STDERR", testpath)
+      results['parse'][1] = results['parse'][1] + 1
+      results['fail']["STDERR"].append(testpath)
+
+    else: # len(stdout_output) <= 0 and len(stderr_output) <= 0
+      ## No output -> no error
+      printTest("Parse test", False, "NO ERROR", testpath)
+      results['parse'][1] = results['parse'][1] + 1
+      results['fail']["NO ERROR"].append(testpath)
+
+  elif len(stdout_output) == 0 and len(stderr_output) == 0:
     printTest("Parse test", False, "NO ERROR", testpath)
     ## Fail - Must have errors to pass
     results['parse'][1] = results['parse'][1] + 1
@@ -132,7 +185,31 @@ def runNameTypeTest(testpath, results):
   stdout_output = outputs.stdout.readlines()
   stderr_output = outputs.stderr.readlines()
 
-  if len(stdout_output) == 0 and len(stderr_output) == 0:
+  if REFERENCE_COMPILER:
+    if len(stdout_output) > 0:
+      if 'line' in stdout_output[0]:
+        ## Error found
+        success = checkErrorInNameOrTypeTest(stdout_output, results, testpath, testname)
+
+      else: # 'line' not in stdout_output[0]
+        ## No line -> no error
+        printTest("Name or Type Test", False, "NO ERROR", testpath)
+        results['name_type'][1] = results['name_type'][1] + 1
+        results['fail']["NO ERROR"].append(testpath)
+
+    elif len(stderr_output) > 0:
+      ## Stderr found
+      printTest("Name or Type Test", False, "STDERR", testpath)
+      results['name_type'][1] = results['name_type'][1] + 1
+      results['fail']["STDERR"].append(testpath)
+
+    else: # len(stdout_output) <= 0 and len(stderr_output) <= 0
+      ## No output -> no error
+      printTest("Name or Type Test", False, "NO ERROR", testpath)
+      results['name_type'][1] = results['name_type'][1] + 1
+      results['fail']["NO ERROR"].append(testpath)
+
+  elif len(stdout_output) == 0 and len(stderr_output) == 0:
     printTest("Name or Type Test", False, "NO ERROR", testpath)
     ## Fail - Must have errors to pass
     results['name_type'][1] = results['name_type'][1] + 1
@@ -145,43 +222,49 @@ def runNameTypeTest(testpath, results):
     results['fail']["STDERR"].append(testpath)
 
   else: # len(returned_lines) != 0:
+    success = checkErrorInNameOrTypeTest(stdout_output, results, testpath, testname)
 
-    match = None # Flag to hold match object
-    i = 0 # Current index of returned_lines
-
-    # Regex to find line number in returned error
-    line_pattern = r'(?:.*[Ll]ine[:]?\s+)?(\d+)'
-
-    while match == None and i < len(stdout_output):
-      match = re.match(line_pattern, stdout_output[i])
-      i += 1
-    if not match:
-      print "Error: Can't detect line number in returned error"
-      print "File :", testpath
-      sys.exit(0)
-    else: # match
-      # Found a match in the error!
-      found_line = match.group(1)
-      
-      # Regex to find a match in the filename...
-      file_pattern = '(' + found_line + r')_.*\.ob'
-
-      if not re.match(file_pattern, testname):
-        # Line found in error doesn't match line found in filename
-        printTest("Name or Type Test", False, "WRONG LINE", testpath)
-        results['name_type'][1] = results['name_type'][1] + 1
-        results['fail']["WRONG LINE"].append(testpath)
-
-      else: #re.match(file_pattern, testname)
-        # Line found in error matches line found in filename!
-        printTest("Name or Type Test", True, "", testpath)
-        results['name_type'][0] = results['name_type'][0] + 1
-        success = True
-
-  
   ## cd back to where we started
   os.chdir(os.path.dirname(cur_dir))
 
+  return success
+
+
+def checkErrorInNameOrTypeTest(stdout_output, results, testpath, testname):
+  """ Subroutine to compare a returned error with the name of the test """
+  success = False
+
+  match = None # Flag to hold match object
+  i = 0 # Current index of returned_lines
+
+  # Regex to find line number in returned error
+  line_pattern = r'(?:.*[Ll]ine[:]?\s+)?(\d+)'
+
+  match = re.match(line_pattern, stdout_output[0])
+
+  if not match:
+    printTest("Name or Type Test", False, "NO LINE", testpath)
+    results['name_type'][1] = results['name_type'][1] + 1
+    results['fail']["NO LINE"].append(testpath)
+  else: # match
+    # Found a match in the error!
+    found_line = match.group(1)
+    
+    # Regex to find a match in the filename...
+    file_pattern = '(' + found_line + r')_.*\.ob'
+
+    if not re.match(file_pattern, testname):
+      # Line found in error doesn't match line found in filename
+      printTest("Name or Type Test", False, "LINE "+found_line, testpath)
+      results['name_type'][1] = results['name_type'][1] + 1
+      results['fail']["WRONG LINE"].append(testpath)
+
+    else: #re.match(file_pattern, testname)
+      # Line found in error matches line found in filename!
+      printTest("Name or Type Test", True, "", testpath)
+      results['name_type'][0] = results['name_type'][0] + 1
+      success = True
+  
   return success
 
 
@@ -342,13 +425,12 @@ def main():
   global TESTS
   global LEVEL
   global CODEGEN
+  global REFERENCE_COMPILER
 
   if len(sys.argv) > 1:
     ## Is the level specified?
     artifact_pattern = r'-?(A(?:[134]|2[ab]))'
-    level_pattern = r'-?L(\d+)'
     for i in sys.argv[1:]:
-      #m = re.match(level_pattern, i)
       m = re.match(artifact_pattern, i)
       if m:
         artifact = m.group(1)
@@ -382,6 +464,10 @@ def main():
       CODEGEN = True
       sys.argv.remove('-codegen')
 
+    if '-ref' in sys.argv:
+      REFERENCE_COMPILER = True
+      sys.argv.remove('-ref')
+
     ## What's left is the running command
     COMMAND = " ".join(sys.argv[1:])
   else:
@@ -393,7 +479,7 @@ def main():
   ## results[test_type] = [num_pass, num_fail]
   ## results['fail'][fail_type] = [fail_path0, fail_path1, ...]
   results = {'positive':[0,0], 'name_type':[0,0], 'parse':[0,0], 'lifted_cmp':[0,0], 'compile_c':[0,0], 'run_c':[0,0], 'expected_cmp':[0,0],
-             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[], "NO EXP FILE":[], "NO STDOUT FILE":[], "EXP CMP":[]} }
+             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[], "NO EXP FILE":[], "NO STDOUT FILE":[], "EXP CMP":[], "NO LINE":[]} }
 
 
   #####################################################################
@@ -443,7 +529,7 @@ def main():
           success = runPositiveTest(test, results)
 
           ## if base test succeeds and -codegen in args
-          if success and (CODEGEN or 'T5a' in TESTS):
+          if success and (not REFERENCE_COMPILER) and (CODEGEN or 'T5a' in TESTS):
             splitext = os.path.splitext(test)
             test_lifted = splitext[0] + '_lifted' + splitext[1]
             test_lifted_lifted = splitext[0] + '_lifted_lifted' + splitext[1]
