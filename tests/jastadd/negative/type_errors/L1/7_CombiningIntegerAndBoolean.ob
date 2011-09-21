@@ -1,0 +1,8 @@
+MODULE TestModule;
+    VAR a : INTEGER;
+        b : BOOLEAN;
+BEGIN
+    a := 1 * (2 + 3);
+    b := TRUE & FALSE;
+    a := b + a
+END TestModule.

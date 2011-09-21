@@ -1,0 +1,6 @@
+MODULE TestModule;
+    VAR j : INTEGER;
+BEGIN
+	FOR j := 1 TO 2<3 DO
+	END
+END TestModule.

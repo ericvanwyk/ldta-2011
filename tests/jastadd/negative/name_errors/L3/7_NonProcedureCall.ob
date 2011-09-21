@@ -1,0 +1,8 @@
+MODULE TestModule;
+	CONST c = 1;
+	PROCEDURE f;
+	END f;
+BEGIN
+    f;
+    c
+END TestModule.

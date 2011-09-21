@@ -1,0 +1,10 @@
+MODULE TestModule;
+	CONST SIZE = 10;
+	VAR a : ARRAY SIZE OF INTEGER;
+		n : INTEGER;
+BEGIN
+	n := 0;
+	a[n + 2*SIZE] := 1;   (* OK, since the expression is not constant *)
+	a[0] := 1;            (* OK *)
+	a[-1] := 1            (* NOT OK *)
+END TestModule.

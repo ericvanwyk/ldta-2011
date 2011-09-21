@@ -1,0 +1,3 @@
+MODULE TestModule;
+	TYPE t = ARRAY 1<2 OF INTEGER;
+END TestModule.

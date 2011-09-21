@@ -1,0 +1,8 @@
+MODULE TestModule;
+	VAR a : INTEGER;
+	PROCEDURE f;
+	END f;
+BEGIN
+    f;
+    a
+END TestModule.

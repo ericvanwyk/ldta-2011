@@ -1,0 +1,6 @@
+MODULE TestModule;
+	CONST i = 0;
+BEGIN
+    FOR i := 1 TO 2 DO
+    END
+END TestModule.

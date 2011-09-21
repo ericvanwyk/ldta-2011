@@ -1,0 +1,15 @@
+MODULE Factorial;
+    TYPE t1 = ARRAY 10 OF INTEGER;
+    VAR a : t1;
+    
+	(* OK *)
+    PROCEDURE f(VAR ar : t1);
+    END f;
+    
+    (* NOT OK, should be VAR *)
+    PROCEDURE g(ar : t1);       
+    END g;
+BEGIN
+    f(a);
+    g(a)
+END Factorial.

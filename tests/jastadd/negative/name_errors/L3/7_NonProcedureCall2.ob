@@ -1,0 +1,8 @@
+MODULE TestModule;
+	TYPE t = INTEGER;
+	PROCEDURE f;
+	END f;
+BEGIN
+    f;
+    t
+END TestModule.

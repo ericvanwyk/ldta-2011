@@ -1,0 +1,3 @@
+MODULE TestModule;
+	TYPE t = INT;
+END TestModule.

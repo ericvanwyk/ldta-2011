@@ -1,0 +1,12 @@
+MODULE TestModule;
+	PROCEDURE g1;
+		PROCEDURE g2;
+			PROCEDURE g3;
+			END g3;
+		BEGIN
+			g3;  (* OK *)
+			g2;  (* OK *)
+			g1   (* NOT OK *)
+		END g2;
+	END g1;
+END TestModule.

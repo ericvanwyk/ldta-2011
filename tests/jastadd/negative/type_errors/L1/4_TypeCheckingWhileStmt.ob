@@ -1,0 +1,7 @@
+MODULE TestModule;
+BEGIN
+	WHILE 2 < 3 DO
+		WHILE 2 + 3 DO
+		END
+	END
+END TestModule.

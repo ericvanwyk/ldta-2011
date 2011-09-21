@@ -1,0 +1,4 @@
+MODULE TestModule;
+	PROCEDURE f;
+	END anotherName;
+END TestModule.

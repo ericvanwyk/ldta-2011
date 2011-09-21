@@ -1,0 +1,8 @@
+MODULE TestModule;
+	TYPE t = ARRAY 10 OF INTEGER;
+		t2 = ARRAY 10 OF t;
+	VAR m1, m2 : t2;
+BEGIN
+	m1[0][0] := m2[0][0];  (* OK *)
+	m1 := m2               (* NOT OK, variables with complex types cannot be assigned a value *)
+END TestModule.

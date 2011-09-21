@@ -1,0 +1,7 @@
+MODULE TestModule;
+	TYPE int = INTEGER;
+
+	PROCEDURE f();
+		CONST C3 = 2 * int;
+	END f;
+END TestModule.

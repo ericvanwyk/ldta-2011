@@ -1,0 +1,6 @@
+MODULE TestModule;
+	VAR a : ARRAY 10 OF INTEGER;
+BEGIN
+	a[0] := 1;
+	a[1<2] := 2
+END TestModule.

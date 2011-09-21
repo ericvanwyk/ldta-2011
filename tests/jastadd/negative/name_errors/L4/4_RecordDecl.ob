@@ -1,0 +1,6 @@
+MODULE TestModule;
+	VAR a : RECORD
+				a : INTEGER;  
+				a : INTEGER
+			END;
+END TestModule.

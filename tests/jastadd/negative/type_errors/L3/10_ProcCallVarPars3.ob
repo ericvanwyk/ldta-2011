@@ -1,0 +1,11 @@
+MODULE TestModule;
+	CONST c = 1;
+	VAR a : INTEGER;
+	PROCEDURE f(VAR a : INTEGER);
+	BEGIN
+		Write(a)
+	END f;
+BEGIN
+	f(a);   (* OK *)
+	f(c)    (* NOT OK *)
+END TestModule.

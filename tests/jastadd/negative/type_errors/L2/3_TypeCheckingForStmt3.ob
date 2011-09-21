@@ -1,0 +1,5 @@
+MODULE TestModule;
+BEGIN
+    FOR k := 1 TO 2 DO
+    END
+END TestModule.

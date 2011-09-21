@@ -1,0 +1,6 @@
+MODULE TestModule;
+BEGIN
+    CASE 1 < 2 OF
+    1:
+    END
+END TestModule.

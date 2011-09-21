@@ -1,0 +1,7 @@
+MODULE TestModule;
+	TYPE t = RECORD n : INTEGER END;
+	VAR r1, r2 : t;
+BEGIN
+	r1.n := r2.n;          (* OK *)
+	r1 := r2               (* NOT OK, variables with complex types cannot be assigned a value *)
+END TestModule.

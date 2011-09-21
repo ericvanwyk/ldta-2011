@@ -1,0 +1,6 @@
+MODULE TestModule;
+BEGIN
+	IF 1 < 2 THEN
+	ELSIF 5 + 2 THEN
+	END
+END TestModule.

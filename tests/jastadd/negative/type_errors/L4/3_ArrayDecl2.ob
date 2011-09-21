@@ -1,0 +1,4 @@
+MODULE TestModule;
+	CONST SIZE = 10;
+	TYPE t = ARRAY SIZE - 2*SIZE OF INTEGER;
+END TestModule.

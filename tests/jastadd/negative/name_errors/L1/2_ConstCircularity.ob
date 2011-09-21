@@ -1,0 +1,3 @@
+MODULE TestModule;
+	CONST a = a;
+END TestModule.
