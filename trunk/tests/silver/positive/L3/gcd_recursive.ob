@@ -1,0 +1,28 @@
+MODULE Gcd;
+
+  PROCEDURE writegcd(a:INTEGER; b:INTEGER);
+    VAR n : INTEGER;
+  
+    PROCEDURE gcd(a:INTEGER; b:INTEGER; VAR result:INTEGER);
+    BEGIN
+      IF b = 0 THEN
+        result := a
+      ELSIF a = 0 THEN
+        result := b
+      ELSE
+        IF a > b THEN
+          gcd(a-b, b, result)
+        ELSE
+          gcd(b, b-a, result)
+        END
+      END
+    END gcd;
+  BEGIN
+    gcd(a, b, n);
+    Write(n); WriteLn();
+  END writegcd;
+
+BEGIN 
+  writegcd(456, 132);
+END Gcd.
+
