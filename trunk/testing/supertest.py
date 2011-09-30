@@ -432,7 +432,7 @@ def main():
     artifact_pattern = r'-?(A(?:[134]|2[ab]))'
     for i in sys.argv[1:]:
       m = re.match(artifact_pattern, i)
-      if m:
+      if m and not LEVEL:
         artifact = m.group(1)
         sys.argv.remove(m.group(0))
         if artifact == 'A1':
