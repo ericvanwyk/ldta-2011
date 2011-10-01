@@ -1,0 +1,9 @@
+MODULE type;
+
+CONST
+    aconst1 = 10;
+
+VAR    
+    avar1 : aconst1;
+
+END type.

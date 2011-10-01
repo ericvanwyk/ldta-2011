@@ -1,0 +1,6 @@
+MODULE condname;
+
+BEGIN
+    IF bvar THEN
+    END
+END condname.

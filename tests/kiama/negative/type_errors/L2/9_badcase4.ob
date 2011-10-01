@@ -1,0 +1,11 @@
+MODULE badcase;
+
+VAR
+    avar : INTEGER;
+
+BEGIN
+    CASE avar OF
+        18 : avar := 3
+      | avar + 1 .. avar + 10 : avar := 5
+    END
+END badcase.

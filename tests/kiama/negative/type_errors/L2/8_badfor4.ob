@@ -1,0 +1,11 @@
+MODULE badfor;
+
+VAR
+    avar : INTEGER;
+    cvar : INTEGER;
+
+BEGIN
+    FOR avar := 1 TO 2 BY cvar * 2 DO
+        avar := 42
+    END
+END badfor.

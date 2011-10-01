@@ -1,0 +1,11 @@
+MODULE badcase;
+
+VAR
+    avar : INTEGER;
+    bvar : BOOLEAN;
+
+BEGIN
+    CASE bvar OF
+        18 : avar := 19
+    END
+END badcase.

@@ -1,0 +1,9 @@
+MODULE type;
+
+TYPE
+    atype3 = INTEGER;
+    
+VAR    
+    atype3 : INTEGER;
+
+END type.

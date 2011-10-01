@@ -1,0 +1,10 @@
+MODULE forname;
+
+VAR
+    bvar : INTEGER;
+
+BEGIN
+    FOR bvar1 := bvar2 TO bvar2 DIV 2 BY -avar DO
+        bvar := bvar * 10
+    END
+END forname.

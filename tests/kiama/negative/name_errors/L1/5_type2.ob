@@ -1,0 +1,7 @@
+MODULE type;
+
+TYPE
+    atype2 = INTEGER;
+    atype2 = BOOLEAN;
+
+END type.

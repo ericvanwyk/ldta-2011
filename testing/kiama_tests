@@ -1,0 +1,16 @@
+#!/bin/bash
+
+## To run artifact-specific tests, use the '-A#' option (sub 1, 2a, 2b, 3, or 4 for '#')
+
+if test $# -ne 1
+then
+    echo 'usage: kiama_tests artifact'
+    exit 1
+fi    
+
+## Avoid relative paths
+KO=`python -c 'import os.path; print os.path.realpath(os.path.abspath("../ko"))'`
+
+## Run supertest.py with Kiama compiler
+python supertest.py $@ $KO $@
+

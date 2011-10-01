@@ -1,0 +1,6 @@
+MODULE selfref;
+
+CONST
+    aconst1 = aconst1;
+
+END selfref.

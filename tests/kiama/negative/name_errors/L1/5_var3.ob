@@ -1,0 +1,7 @@
+MODULE varname;
+
+VAR
+    avar3 : INTEGER;
+    avar3 : BOOLEAN;
+
+END varname.

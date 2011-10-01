@@ -1,0 +1,7 @@
+MODULE nonintconstant;
+
+CONST
+    aconst1 = 10;
+    aconst2 = TRUE OR (aconst1 = 100);
+
+END nonintconstant.

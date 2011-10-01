@@ -1,0 +1,11 @@
+MODULE condname;
+
+VAR
+    bvar : BOOLEAN;
+
+BEGIN
+    IF bvar THEN
+        avar := 0
+    ELSE
+    END
+END condname.

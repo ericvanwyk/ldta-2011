@@ -1,0 +1,6 @@
+MODULE whilename;
+
+BEGIN
+    WHILE bvar DO
+    END
+END whilename.

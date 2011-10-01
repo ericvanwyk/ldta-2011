@@ -1,0 +1,19 @@
+MODULE type;
+
+CONST
+    aconst1 = 10;
+    aconst2 = 20;
+
+TYPE
+    atype1 = INTEGER;
+    atype3 = BOOLEAN;
+
+TYPE
+    atype2 = atype1;
+    
+VAR    
+    avar1 : atype1;
+    avar3 : INTEGER;
+    avar4 : BOOLEAN;
+
+END type.

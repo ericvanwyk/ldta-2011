@@ -1,0 +1,6 @@
+MODULE selfref;
+    
+TYPE
+    atype1 = atype1;
+
+END selfref.

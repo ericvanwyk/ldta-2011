@@ -1,0 +1,11 @@
+MODULE badfor;
+
+VAR
+    avar : INTEGER;
+    bvar : BOOLEAN;
+
+BEGIN
+    FOR bvar := FALSE TO TRUE DO
+        avar := 42
+    END
+END badfor.

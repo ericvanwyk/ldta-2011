@@ -1,0 +1,7 @@
+MODULE varname;
+
+VAR
+    avar1 : INTEGER;
+    avar2 : avar1;
+
+END varname.
