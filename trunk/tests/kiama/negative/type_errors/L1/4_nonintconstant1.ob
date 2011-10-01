@@ -1,0 +1,6 @@
+MODULE nonintconstant;
+
+CONST
+    aconst2 = TRUE;
+
+END nonintconstant.

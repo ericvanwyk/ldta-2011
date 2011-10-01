@@ -1,0 +1,10 @@
+MODULE whilename;
+
+VAR
+    avar : INTEGER;
+
+BEGIN
+    WHILE bvar = TRUE DO
+        avar := 1
+    END
+END whilename.

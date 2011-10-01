@@ -1,0 +1,12 @@
+MODULE condname;
+
+VAR
+    avar : INTEGER;
+
+BEGIN
+    IF (bvar # TRUE) & (bvar = FALSE) THEN
+        avar := 4
+    ELSE
+        avar := 6
+    END;
+END condname.

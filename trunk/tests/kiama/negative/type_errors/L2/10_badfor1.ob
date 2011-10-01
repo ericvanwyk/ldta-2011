@@ -1,0 +1,13 @@
+MODULE badfor;
+
+CONST
+    aconst = 10;
+
+VAR
+    avar : INTEGER;
+
+BEGIN
+    FOR aconst := 1 TO 10 DO
+        avar := 1
+    END
+END badfor.

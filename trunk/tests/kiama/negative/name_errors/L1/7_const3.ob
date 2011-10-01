@@ -1,0 +1,8 @@
+MODULE const;
+
+CONST    
+    aconst1 = 1;
+
+BEGIN
+    aconst1 := 42
+END const.

@@ -1,0 +1,9 @@
+MODULE type;
+
+CONST
+    aconst1 = 10;
+
+TYPE
+    atype4 = aconst1;
+
+END type.

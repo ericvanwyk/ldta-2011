@@ -1,0 +1,12 @@
+MODULE condname;
+
+VAR
+    avar : INTEGER;
+    bvar : BOOLEAN;
+
+BEGIN
+    IF bvar THEN
+        avar := 0;
+    ELSIF bvar2 THEN
+    END
+END condname.

@@ -1,0 +1,10 @@
+MODULE casename;
+
+VAR
+    bvar : INTEGER;
+
+BEGIN
+    CASE avar OF
+        1 : bvar := 2
+    END
+END casename.

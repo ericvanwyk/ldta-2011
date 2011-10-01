@@ -1,0 +1,10 @@
+MODULE badfor;
+
+VAR
+    avar : INTEGER;
+
+BEGIN
+    FOR dvar := 1 TO 2 DO
+        avar := 99
+    END
+END badfor.

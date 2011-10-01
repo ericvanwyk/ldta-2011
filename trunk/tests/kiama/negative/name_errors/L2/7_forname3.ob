@@ -1,0 +1,10 @@
+MODULE forname;
+
+VAR
+    bvar : INTEGER;
+
+BEGIN
+    FOR bvar := bvar2 * 3 TO 5 - avar DO
+        bvar2 := bvar MOD 8;
+    END
+END forname.

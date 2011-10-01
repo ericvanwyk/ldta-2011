@@ -1,0 +1,10 @@
+MODULE badcase;
+
+VAR
+    bvar : BOOLEAN;
+
+BEGIN
+    CASE 1 < 2 OF
+        18 : avar := 19
+    END
+END badcase.

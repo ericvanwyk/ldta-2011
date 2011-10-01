@@ -1,0 +1,10 @@
+MODULE forname;
+
+VAR
+    bvar : INTEGER;
+
+BEGIN
+    FOR bvar := 5 TO 6 DO
+        avar := 7
+    END
+END forname.
