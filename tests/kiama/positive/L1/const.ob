@@ -2,8 +2,6 @@ MODULE const;
 
 CONST
     aconst1 = 1;
-    
-CONST    
     aconst2 = aconst1 + 100;
     aconst3 = 400 DIV aconst2;
 

@@ -7,8 +7,6 @@ CONST
 TYPE
     atype1 = INTEGER;
     atype3 = BOOLEAN;
-
-TYPE
     atype2 = atype1;
     
 VAR    
