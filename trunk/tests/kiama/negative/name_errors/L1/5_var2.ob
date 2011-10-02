@@ -2,8 +2,6 @@ MODULE varname;
 
 VAR
     avar4 : INTEGER;
-
-VAR
     avar4 : INTEGER;
 
 END varname.
