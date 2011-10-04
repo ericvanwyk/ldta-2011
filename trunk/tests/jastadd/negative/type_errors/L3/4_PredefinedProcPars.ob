@@ -1,0 +1,5 @@
+MODULE TestModule;
+BEGIN
+	Write(1);     (* OK *)
+	Write         (* NOT OK *)
+END TestModule.
