@@ -1,0 +1,28 @@
+MODULE M;
+    TYPE t1 = RECORD n : INTEGER END;
+         t2 = ARRAY 10 OF t1;
+         t3 = RECORD array : t2 END;
+    VAR a : t2;
+        b : t3;
+
+    PROCEDURE f(VAR par : t1);
+    BEGIN
+        Write(par.n);
+        WriteLn
+    END f;
+
+    PROCEDURE g(VAR par : t2);
+    BEGIN
+        f(par[5])
+    END g;
+
+    PROCEDURE h(VAR par : t3);
+    BEGIN
+        g(par.array) 
+    END h;
+BEGIN
+    a[5].n := 10;
+    g(a);
+    b.array[5].n := 20;
+    h(b)
+END M.

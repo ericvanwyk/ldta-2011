@@ -1,0 +1,16 @@
+(* This test could introduce errors in the generated C code.
+ * This can happen if the variable name is replaced with the 
+ * value of the constant, i.e. the constant is defined as a macro *)
+
+MODULE TestModule;
+    CONST x = 10;
+    PROCEDURE f;
+        VAR x : INTEGER;
+    BEGIN
+        x := 50;
+        Write(x);
+        WriteLn
+    END f;
+BEGIN
+    f
+END TestModule.
