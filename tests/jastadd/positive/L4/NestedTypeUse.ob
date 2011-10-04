@@ -1,0 +1,19 @@
+MODULE TestModule;
+    TYPE re = RECORD n : INTEGER END;
+         ar = ARRAY 10 OF re;
+    VAR a : ar;
+
+    PROCEDURE f(VAR b : re);
+    BEGIN
+        b.n := 10
+    END f;
+
+    PROCEDURE g(VAR b : ar);
+    BEGIN
+        f(b[5])
+    END g;
+BEGIN
+    g(a);
+    Write(a[5].n);
+    WriteLn
+END TestModule.
