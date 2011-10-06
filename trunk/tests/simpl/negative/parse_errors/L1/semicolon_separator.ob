@@ -1,0 +1,11 @@
+(* According to the original grammar description, semicolon
+   is statement separator, not statement terminator. *)
+
+MODULE SemicolonSeparator;
+	VAR
+		foo: INTEGER
+BEGIN
+	IF TRUE THEN
+		foo := 10;
+	END
+END SemicolonSeparator.
