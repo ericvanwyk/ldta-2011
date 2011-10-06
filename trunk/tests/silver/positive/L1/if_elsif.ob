@@ -15,8 +15,4 @@ BEGIN
     z := 0
   END;
   
-  Write(x); WriteLn();
-  Write(y); WriteLn();
-  Write(z); WriteLn();
-
 END IfElsif.

@@ -13,5 +13,4 @@ BEGIN
     x := 42
   END;
   
-  Write(x); WriteLn
 END IfElse.

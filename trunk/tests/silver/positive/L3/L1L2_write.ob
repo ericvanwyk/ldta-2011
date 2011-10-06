@@ -1,0 +1,60 @@
+MODULE Gcd;
+
+  VAR a, b : INTEGER;
+
+BEGIN 
+  (* Test some basic things about L1 and L2, 
+     but now with writes! *)
+     
+  a := 456 ;
+  b := 132 ;
+  
+  (* Another comment! *)
+  
+  WHILE b # 0 DO
+    IF a > b THEN
+      a := a - b
+    ELSE
+      b := b - a
+    END
+  END ;
+  
+  Write(a); WriteLn();
+  Write(b); WriteLn; WriteLn;
+
+  (* FIZZ BUZZ IN OBERON0 WORLD FIRST i hope *)
+  
+  FOR b := 1 TO 20 DO
+    IF b MOD 3 = 0 THEN
+      IF b MOD 5 = 0 THEN
+        Write(-1); Write(-2); WriteLn
+      ELSE
+        Write(-1); WriteLn
+      END
+    ELSIF b MOD 5 = 0 THEN
+      Write(-2); WriteLn
+    ELSE
+      Write(b); WriteLn
+    END
+  END;
+  WriteLn;WriteLn;
+  
+  (* THE FOR-CASE PARADIGM *)
+  
+  FOR a := 1 TO 10 DO
+    CASE a OF
+      2,4,6,8,10: Write(0);
+      
+    | 1..5: Write(1);
+      
+    | 6..10: Write(2);
+      
+    ELSE  Write(3)
+    END
+  END;
+  
+  WriteLn
+
+
+END Gcd.
+

@@ -10,5 +10,4 @@ BEGIN
       many lines *)
   x := x + 4;
   
-  Write(x); WriteLn
 END Comments.
