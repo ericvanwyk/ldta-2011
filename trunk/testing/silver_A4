@@ -1,9 +1,10 @@
 #!/bin/bash
 
-## To run artifact-specific tests, use the '-A#' option (sub 1, 2a, 2b, 3, or 4 for '#')
+## Script to run A4 artifact with all A4 tests
+## DOES NOT RECEIVE OPTIONS
 
 ## Avoid relative paths
 JAR=`python -c 'import os.path; print os.path.realpath(os.path.abspath("../L4_T5.jar"))'`
 
 ## Run supertest.py with silver compiler
-python supertest.py $@ java -jar $JAR
+python supertest.py -A4 java -jar $JAR
