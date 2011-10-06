@@ -1,0 +1,10 @@
+#!/bin/bash
+
+## Script to run A2b artifact with all A2b tests
+## DOES NOT RECEIVE OPTIONS
+
+## Avoid relative paths
+JAR=`python -c 'import os.path; print os.path.realpath(os.path.abspath("../L2_T3.jar"))'`
+
+## Run supertest.py with silver compiler
+python supertest.py -A2b java -jar $JAR
