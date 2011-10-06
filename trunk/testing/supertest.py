@@ -353,9 +353,16 @@ def runCCode(testpath, results):
 
         ## Compare stdout_file to .expected
         if not os.path.exists(expected):
-          printTest("Compare Expected", False, "NO .expected FILE", expected)
-          results['expected_cmp'][1] = results['expected_cmp'][1] + 1
-          results['fail']['NO EXP FILE'].append(testpath)
+          ## stdout file doesn't exist.
+          ## No output -> Pass
+          ## Output -> Fail
+          if os.path.getsize(stdout_file) == 0:
+            printTest("Compare Empty", True, "", expected)
+            results['expected_cmp'][1] = results['expected_cmp'][1] + 1
+          else: #os.path.getsize(stdout_file) != 0
+            printTest("Compare Empty", False, "NO .expected FILE", expected)
+            results['expected_cmp'][1] = results['expected_cmp'][1] + 1
+            results['fail']['NO EXP FILE'].append(testpath)
         else: #os.path.exists(expected)
           if not os.path.exists(stdout_file):
             printTest("Compare Expected", False, "NO STDOUT FILE", stdout_file)
@@ -429,7 +436,7 @@ def main():
 
   if len(sys.argv) > 1:
     ## Is the level specified?
-    artifact_pattern = r'-?(A(?:[134]|2[ab]))'
+    artifact_pattern = r'-?(A(?:[1345]|2[ab]))'
     for i in sys.argv[1:]:
       m = re.match(artifact_pattern, i)
       if m and not LEVEL:
@@ -449,6 +456,9 @@ def main():
           TESTS = ['T1', 'T2', 'T3']
         elif artifact == 'A4':
           LEVEL = ['L1', 'L2', 'L3', 'L4']
+          TESTS = ['T1', 'T2', 'T3', 'T5a']
+        elif artifact == 'A5':
+          LEVEL = ['L1', 'L2', 'L3', 'L4', 'L5']
           TESTS = ['T1', 'T2', 'T3', 'T5a']
         else:
           print "Error: Unrecognized artifact:", artifact
@@ -511,19 +521,20 @@ def main():
     for l in LEVEL:
       if l in test:
         ## Correct level number, need to check test number
-        errors = True
         if 'negative' in test:
-          ## T1 -> run tests in parse_errors
-          if 'T1' in TESTS and 'parse_errors' in test:
-            runParseTest(test, results)
-
-          ## T2 -> run tests in name_errors
-          elif 'T2' in TESTS and 'name_errors' in test:
-            runNameTypeTest(test, results)
-          
-          ## T3 -> run tests in type_errors
-          elif 'T3' in TESTS and 'type_errors' in test:
-            runNameTypeTest(test, results)
+          ## Skip negative L3 tests if A5
+          if not ('L3' in test and 'L5' in LEVEL):
+            ## T1 -> run tests in parse_errors
+            if 'T1' in TESTS and 'parse_errors' in test:
+              runParseTest(test, results)
+  
+            ## T2 -> run tests in name_errors
+            elif 'T2' in TESTS and 'name_errors' in test:
+              runNameTypeTest(test, results)
+            
+            ## T3 -> run tests in type_errors
+            elif 'T3' in TESTS and 'type_errors' in test:
+              runNameTypeTest(test, results)
 
         elif 'positive' in test:
           success = runPositiveTest(test, results)
