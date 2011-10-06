@@ -10,7 +10,4 @@ BEGIN
   x := ((((x + y))));
   x := 1 + 2 * 3;
 
-  Write(x); WriteLn();
-  Write(y); WriteLn();
-
 END DuplicateParens.

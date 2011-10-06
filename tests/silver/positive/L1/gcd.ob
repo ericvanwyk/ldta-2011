@@ -14,8 +14,5 @@ BEGIN
     END
   END ;
   
-  Write(a); WriteLn();
-  Write(b); WriteLn();
-
 END Gcd.
 

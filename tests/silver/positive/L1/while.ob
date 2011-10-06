@@ -13,7 +13,4 @@ BEGIN
     i := i + 1
   END;
   
-  Write(x); WriteLn;
-  Write(y); WriteLn;
-  Write(i); WriteLn;
 END While.

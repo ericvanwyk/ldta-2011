@@ -10,7 +10,4 @@ BEGIN
   | 20: y := 1
   END;
   
-  Write(x); WriteLn;
-  Write(y); WriteLn;
-
 END case.
