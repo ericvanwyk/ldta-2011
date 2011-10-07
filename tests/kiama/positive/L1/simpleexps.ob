@@ -21,9 +21,9 @@ BEGIN
     ivar1 := ivar2 * 4;
     ivar1 := 5 * ivar2;
     ivar1 := ivar2 DIV 6;
-    ivar1 := -7 DIV ivar2;
+    ivar1 := -7 DIV (ivar2 + 1);
     ivar1 := ivar2 MOD ivar1;
-    ivar1 := 8 MOD ivar2;
+    ivar1 := 8 MOD (ivar2 + 1);
     
     ivar1 := 2 + 3 * 4;
     ivar1 := (2 + 3) * 4;
