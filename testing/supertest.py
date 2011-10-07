@@ -115,17 +115,10 @@ def runParseTest(testpath, results):
 
   if REFERENCE_COMPILER:
     if len(stdout_output) > 0:
-      if 'line' in stdout_output[0]:
-        ## Error found
-        printTest("Parse test", True, "", testpath)
-        results['parse'][0] = results['parse'][0] + 1
-        success = True
-
-      else: # 'line' not in stdout_output[0]
-        ## No output -> no error
-        printTest("Parse test", False, "NO ERROR", testpath)
-        results['parse'][1] = results['parse'][1] + 1
-        results['fail']["NO ERROR"].append(testpath)
+      ## Error found
+      printTest("Parse test", True, "", testpath)
+      results['parse'][0] = results['parse'][0] + 1
+      success = True
 
     elif len(stderr_output) > 0:
       ## Stderr found
@@ -152,15 +145,9 @@ def runParseTest(testpath, results):
     results['fail']["STDERR"].append(testpath)
 
   else: # len(returned_lines) != 0:
-    if 'parse failed' not in stdout_output[0] and 'ob0c' not in COMMAND:
-      printTest("Parse test", False, "WRONG ERR", testpath)
-      results['parse'][1] = results['parse'][1] + 1
-      results['fail']["WRONG ERR"].append(testpath)
-
-    else: #'parse failed' in stdout_output[0] or 'ob0c' in COMMAND:
-      printTest("Parse test", True, "", testpath)
-      results['parse'][0] = results['parse'][0] + 1
-      success = True
+    printTest("Parse test", True, "", testpath)
+    results['parse'][0] = results['parse'][0] + 1
+    success = True
   
   ## cd back to where we started
   os.chdir(os.path.dirname(cur_dir))
