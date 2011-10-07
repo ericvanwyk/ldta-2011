@@ -340,12 +340,11 @@ def runCCode(testpath, results):
 
         ## Compare stdout_file to .expected
         if not os.path.exists(expected):
-          ## stdout file doesn't exist.
-          ## No output -> Pass
-          ## Output -> Fail
+          ## stdout file doesn't exist
           if os.path.getsize(stdout_file) == 0:
+            ## .expected doesn't exist and no stdout -> Pass
             printTest("Compare Empty", True, "", expected)
-            results['expected_cmp'][1] = results['expected_cmp'][1] + 1
+            results['expected_cmp'][0] = results['expected_cmp'][0] + 1
           else: #os.path.getsize(stdout_file) != 0
             printTest("Compare Empty", False, "NO .expected FILE", expected)
             results['expected_cmp'][1] = results['expected_cmp'][1] + 1
