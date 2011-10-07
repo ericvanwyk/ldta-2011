@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./supertest.py $* `pwd`/../../../ldta-challenge/run-simpl.sh a2a
