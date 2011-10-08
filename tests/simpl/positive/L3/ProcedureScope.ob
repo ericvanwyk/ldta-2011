@@ -1,0 +1,19 @@
+MODULE ProcScope;
+    PROCEDURE f;
+    END f;
+
+    PROCEDURE g;
+    BEGIN
+        f
+    END g;
+
+    PROCEDURE h;
+    BEGIN
+        f;
+        g
+    END h;
+BEGIN
+    f;
+    g;
+    h
+END ProcScope.
