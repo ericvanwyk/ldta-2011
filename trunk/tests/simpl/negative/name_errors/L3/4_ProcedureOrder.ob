@@ -1,0 +1,9 @@
+MODULE ProcedureOrder;
+    PROCEDURE foo;
+    BEGIN
+        bar
+    END foo;
+
+    PROCEDURE bar;
+    END bar;
+END ProcedureOrder.

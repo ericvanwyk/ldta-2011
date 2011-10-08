@@ -1,0 +1,8 @@
+MODULE ArgumentScope;
+    PROCEDURE foo(x: INTEGER);
+        PROCEDURE bar;
+        BEGIN
+            x := 10
+        END bar;
+    END foo;
+END ArgumentScope.

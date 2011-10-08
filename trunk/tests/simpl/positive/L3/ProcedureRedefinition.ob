@@ -1,0 +1,13 @@
+(* Since nested procedures do not see each other, should it be possible
+   to reuse name of the sibling nested procedure? *)
+MODULE ProcedureRedefinition;
+    PROCEDURE foo;
+        PROCEDURE bar;
+        END bar;
+
+        PROCEDURE baz;
+            PROCEDURE bar;
+            END bar;
+        END baz;
+    END foo;
+END ProcedureRedefinition.
