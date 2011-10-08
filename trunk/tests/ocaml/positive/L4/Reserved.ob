@@ -1,0 +1,18 @@
+MODULE Reserved;
+  TYPE typedef = INTEGER;
+       struct = RECORD END;
+  VAR int, char, long, double, float, while, 
+      for, switch, case, break : typedef;
+  PROCEDURE volatile (VAR return: typedef);
+    CONST const = 1;
+    VAR static : typedef;
+  BEGIN
+    static := return;
+    return := static + const;
+  END volatile;
+BEGIN
+  int := 100;
+  volatile (int);
+  Write (int);
+  WriteLn
+END Reserved.
