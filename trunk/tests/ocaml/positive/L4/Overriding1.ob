@@ -1,0 +1,7 @@
+MODULE Overriding1;
+VAR Read : INTEGER;
+BEGIN
+  Read := 1;
+  Write (Read);
+  WriteLn  
+END Overriding1.

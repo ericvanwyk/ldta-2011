@@ -1,0 +1,11 @@
+MODULE Overriding2;
+  VAR x : INTEGER;
+  PROCEDURE p (VAR Write : INTEGER; Read : INTEGER);
+  BEGIN
+    Write := Read + 1
+  END p;
+BEGIN
+  p (x, 10);
+  Write (x);
+  WriteLn
+END Overriding2.
