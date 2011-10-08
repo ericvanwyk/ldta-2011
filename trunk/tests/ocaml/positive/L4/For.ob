@@ -1,0 +1,27 @@
+MODULE For;
+  CONST delim = 111111111;
+  VAR i, x : INTEGER;
+  PROCEDURE PrintLn (x : INTEGER);
+  BEGIN
+    Write (x);
+    WriteLn
+  END PrintLn;
+BEGIN
+  FOR i := 0 TO 3 DO PrintLn (i) END;
+  PrintLn (delim);
+
+  FOR i := 0 TO 3 BY  2 DO PrintLn (i) END;
+  PrintLn (delim);
+
+  FOR i := 3 TO 0 BY -1 DO PrintLn (i) END;
+  PrintLn (delim);
+
+  FOR i := 3 TO 0 BY -2 DO PrintLn (i) END;
+  PrintLn (delim);
+
+  x := 5;
+  FOR i := 0 TO 10 DO
+    x := x+1;
+    PrintLn (i)
+  END
+END For.
