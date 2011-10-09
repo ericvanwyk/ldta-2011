@@ -1,0 +1,23 @@
+MODULE Exp;
+
+  VAR i, j, x : INTEGER;
+
+  PROCEDURE Exp (n : INTEGER; VAR x : INTEGER);
+    VAR i, r : INTEGER;
+  BEGIN
+    r := 1;  
+    FOR i := 1 TO n DO r := r * x END;
+    x := r
+  END Exp;
+
+BEGIN
+  FOR i := 0 TO 4 DO
+    FOR j := 0 TO 10 DO
+      x := j;
+      Exp (i, x);
+      Write (x);
+      WriteLn
+   END
+  END
+END Exp.
+  

@@ -1,0 +1,51 @@
+MODULE Factorize;
+
+  VAR i, j, x, log2, log3 : INTEGER;
+
+  PROCEDURE Factorize (n : INTEGER; VAR log2, log3 : INTEGER);
+  BEGIN
+    log2 := n;
+    log3 := n;
+    Log (2, log2);
+    Log (3, log3)
+  END Factorize;
+
+  PROCEDURE Log (n : INTEGER; VAR x : INTEGER);
+  VAR r, i : INTEGER;
+  BEGIN
+    r := 1;
+    i := 0;
+    WHILE x MOD r = 0 DO
+      r := r * n;
+      i := i + 1
+    END;
+    x := i - 1 
+  END Log;
+
+  PROCEDURE Exp (n : INTEGER; VAR x : INTEGER);
+    VAR i, r : INTEGER;
+  BEGIN
+    r := 1;  
+    FOR i := 1 TO n DO r := r * x END;
+    x := r
+  END Exp;
+
+BEGIN
+  FOR i := 0 TO 5 DO
+    x := 2;
+    Exp (i, x); 
+    FOR j := 0 TO 5 DO     
+      log3 := 3;
+      Exp (j, log3); 
+      Write (i);
+      WriteLn;
+      Write (j);
+      WriteLn;
+      Factorize (log3 * x, log2, log3); 
+      Write (log2);
+      WriteLn;
+      Write (log3);
+      WriteLn
+    END
+  END
+END Factorize.

@@ -1,0 +1,111 @@
+MODULE Corec;
+
+  VAR x : INTEGER;
+
+  PROCEDURE Z (VAR x : INTEGER);
+  BEGIN
+    x := 0
+  END Z;
+
+  PROCEDURE S (VAR x : INTEGER);
+  BEGIN
+    x := x + 1
+  END S;
+
+  PROCEDURE C (f, g : INTEGER; VAR x : INTEGER);
+  BEGIN
+    Eval (g, x);
+    Eval (f, x)
+  END C;
+
+  PROCEDURE R (g, h : INTEGER; VAR x : INTEGER);
+  BEGIN
+    IF x = 0 THEN Eval (g, x)
+    ELSE 
+      x := x - 1 ;
+      R (g, h, x);
+      Eval (h, x)
+    END
+  END R;
+
+  PROCEDURE Eval (n : INTEGER; VAR x : INTEGER);
+  VAR a, b : INTEGER;
+  BEGIN
+    CASE n OF
+    0: Z (x) |
+    1: S (x) 
+    ELSE 
+      IF n MOD 2 = 0 
+      THEN
+        a := n;
+        Log (2, a);
+        DePair (a, a, b);
+        C (a, b, x)
+      ELSIF n MOD 3 = 0 
+      THEN
+        a := n;
+        Log (3, a);
+        DePair (a, a, b);
+        R (a, b, x)
+      END
+    END
+  END Eval;
+
+  PROCEDURE Log (n : INTEGER; VAR x : INTEGER);
+  VAR r, i : INTEGER;
+  BEGIN
+    r := 1;
+    i := 0;
+    WHILE x MOD r = 0 DO
+      r := r * n;
+      i := i + 1
+    END;
+    x := i - 1 
+  END Log;
+
+  PROCEDURE Exp (n : INTEGER; VAR x : INTEGER);
+    VAR i, r : INTEGER;
+  BEGIN
+    r := 1;  
+    FOR i := 1 TO n DO r := r * x END;
+    x := r
+  END Exp;
+
+  PROCEDURE EnPair (x, y : INTEGER; VAR p : INTEGER);
+  VAR a, b : INTEGER;
+  BEGIN
+    a := x;
+    b := y;
+    Exp (2, a);
+    Exp (3, b);
+    p := a * b
+  END EnPair;
+
+  PROCEDURE DePair (n : INTEGER; VAR x, y : INTEGER);
+  BEGIN
+    x := n;
+    y := n;
+    Log (2, x);
+    Log (3, y)
+  END DePair;
+
+  PROCEDURE W (x : INTEGER);
+  BEGIN
+    Write (x);
+    WriteLn
+  END W;
+
+BEGIN
+  x := 10;
+  Eval (1, x); (* x := x+1 *)
+  W (x);
+  x := 24;
+  Eval (64, x); (* x := x+2 *)
+  W (x);
+  x := 0;
+  Eval (729, x); (* x := R (1, 1) *)
+  W (x);
+  x := 45;
+  Eval (729, x);
+  W (x)
+END Corec.
