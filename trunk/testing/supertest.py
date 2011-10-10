@@ -502,43 +502,52 @@ def main():
   #####################################################################
   # Run each test
   #####################################################################
+  print LEVEL
+  print TESTS
   for test in all_tests:
+    dirname = os.path.dirname(test)
 
     for l in LEVEL:
       if l in test:
         ## Correct level number, need to check test number
-        if 'negative' in test:
+        if 'negative' in dirname:
           ## Skip negative L3 tests if A5
-          if not ('L3' in test and 'L5' in LEVEL):
+          if not ('L3' in dirname and 'L5' in LEVEL):
             ## T1 -> run tests in parse_errors
-            if 'T1' in TESTS and 'parse_errors' in test:
+            if 'T1' in TESTS and 'parse_errors' in dirname:
               runParseTest(test, results)
   
             ## T2 -> run tests in name_errors
-            elif 'T2' in TESTS and 'name_errors' in test:
+            elif 'T2' in TESTS and 'name_errors' in dirname:
               runNameTypeTest(test, results)
             
             ## T3 -> run tests in type_errors
-            elif 'T3' in TESTS and 'type_errors' in test:
+            elif 'T3' in TESTS and 'type_errors' in dirname:
               runNameTypeTest(test, results)
 
-        elif 'positive' in test:
-          success = runPositiveTest(test, results)
+        elif 'positive' in dirname:
+          i = 0
+          done = False
+          while i < len(LEVEL) and not done:
+            if LEVEL[i] in dirname:
+              done = True
+              success = runPositiveTest(test, results)
 
-          ## if base test succeeds and -codegen in args
-          if success and (not REFERENCE_COMPILER) and (CODEGEN or 'T5a' in TESTS):
-            splitext = os.path.splitext(test)
-            test_lifted = splitext[0] + '_lifted' + splitext[1]
-            test_lifted_lifted = splitext[0] + '_lifted_lifted' + splitext[1]
+              ## if base test succeeds and -codegen in args
+              if success and (not REFERENCE_COMPILER) and (CODEGEN or 'T5a' in TESTS):
+                splitext = os.path.splitext(test)
+                test_lifted = splitext[0] + '_lifted' + splitext[1]
+                test_lifted_lifted = splitext[0] + '_lifted_lifted' + splitext[1]
 
-            ## run the compiler on file_lifted.ob(0?), check for no errors
-            lifted_success = runPositiveTest(test_lifted, results)
-            if lifted_success:
-              compareLifted(test_lifted, test_lifted_lifted, results)
+                ## run the compiler on file_lifted.ob(0?), check for no errors
+                lifted_success = runPositiveTest(test_lifted, results)
+                if lifted_success:
+                  compareLifted(test_lifted, test_lifted_lifted, results)
 
-            ## run gcc on file.c, check for zero value return code
-            test_c = splitext[0] + '.c'
-            runCCode(test_c, results)
+                ## run gcc on file.c, check for zero value return code
+                test_c = splitext[0] + '.c'
+                runCCode(test_c, results)
+            i += 1
 
         else: # 'negative' not in test and 'positive' not in test
           print "Supertest error, Unknown test:", test
