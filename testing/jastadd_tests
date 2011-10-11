@@ -1,0 +1,13 @@
+#!/bin/bash
+
+ART="A4"
+if [[ $# == 1 ]] && [[ "$1" == "A1" || "$1" == "A2a" || "$1" == "A2b" || "$1" == "A3" || "$1" == "A4" ]]
+then
+    ART=$1
+fi
+
+./clean_tests 2> /dev/null
+echo "#"
+echo "# Running test for artifact $ART"
+echo "#"
+python supertest.py -$ART java -jar `pwd`/Oberon0-compiler-$ART.jar
