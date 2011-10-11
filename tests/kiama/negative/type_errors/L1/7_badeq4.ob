@@ -1,0 +1,8 @@
+MODULE badeq;
+
+VAR
+    bvar : BOOLEAN;
+
+BEGIN
+    bvar := bvar # FALSE
+END badeq.

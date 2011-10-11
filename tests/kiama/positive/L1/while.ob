@@ -8,11 +8,11 @@ BEGIN
     WHILE bvar DO
     END;
     
-    WHILE bvar = TRUE DO
+    WHILE bvar DO
         avar := 1
     END;
     
-    WHILE bvar = TRUE DO
+    WHILE bvar DO
         avar := 2;
     END;
 
