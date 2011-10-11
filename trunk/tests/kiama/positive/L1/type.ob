@@ -8,10 +8,17 @@ TYPE
     atype1 = INTEGER;
     atype3 = BOOLEAN;
     atype2 = atype1;
+    atype4 = INTEGER;
+    atype5 = atype3;
     
 VAR    
     avar1 : atype1;
     avar3 : INTEGER;
     avar4 : BOOLEAN;
-
+    avar5 : atype5;
+    
+BEGIN
+    avar1 := 1;
+    avar1 := avar1 * avar3;
+    avar5 := TRUE   
 END type.

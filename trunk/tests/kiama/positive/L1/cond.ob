@@ -18,11 +18,11 @@ BEGIN
     ELSIF bvar THEN
     END;
 
-    IF bvar = FALSE THEN
+    IF ~bvar THEN
         avar := 2
     END;
     
-    IF (bvar # TRUE) & (bvar = FALSE) THEN
+    IF ~bvar & bvar THEN
         avar := 3;
         avar := 4
     ELSE

@@ -1,0 +1,9 @@
+MODULE badeq;
+
+VAR
+    avar : INTEGER;
+    bvar : BOOLEAN;
+
+BEGIN
+    bvar := bvar # avar
+END badeq.
