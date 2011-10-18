@@ -315,13 +315,23 @@ def runCCode(testpath, results):
       printTest("Positive GCC", True, "", testpath)
       results['compile_c'][0] = results['compile_c'][0] + 1
 
+      ## Configure stdin
+      stdin_file = os.path.splitext(testname)[0] + '.stdin'
+      #print "STDIN FILE:", stdin_file
+
+      stdin_text = ""
+      if os.path.exists(stdin_file):
+        stdin_text = "< " + stdin_file + " "
+      #print "STDIN TEXT:", stdin_text
+
+      ## Configure stdout
       stdout_file = os.path.splitext(testname)[0] + '.stdout'
 
       if os.path.exists(stdout_file):
         os.remove(stdout_file)
 
       ## Run the compiled executable
-      outputs = subprocess.Popen('./' + executable + ' > ' + stdout_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      outputs = subprocess.Popen('./' + executable + ' ' + stdin_text + ' > ' + stdout_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
       ## Not needed; redirected to stdout_file
       #stdout_output = outputs.stdout.readlines()
