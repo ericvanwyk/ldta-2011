@@ -518,7 +518,7 @@ def main():
     dirname = os.path.dirname(test)
 
     for l in LEVEL:
-      if l in test:
+      if l in dirname:
         ## Correct level number, need to check test number
         if 'negative' in dirname:
           ## Skip negative L3 tests if A5
