@@ -1,0 +1,10 @@
+MODULE TestModule;
+	PROCEDURE f;
+	BEGIN
+        g
+	END f;
+
+    PROCEDURE g;
+
+    END g;
+END TestModule.
