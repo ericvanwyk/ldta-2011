@@ -1,10 +1,9 @@
 MODULE TestModule;
 	PROCEDURE f;
 	BEGIN
-        g
+		g
 	END f;
 
-    PROCEDURE g;
-
-    END g;
+	PROCEDURE g;
+	END g;
 END TestModule.

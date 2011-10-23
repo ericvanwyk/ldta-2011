@@ -1,5 +1,5 @@
 MODULE TestModule;
 BEGIN
-    Write(-(-(1)));
-    WriteLn
+	Write(-(-(1)));
+	WriteLn
 END TestModule.
