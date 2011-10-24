@@ -261,13 +261,13 @@ def compareLifted(lifted, lifted_lifted, results):
   if not os.path.exists(lifted):
     printTest("Compare Lifted", False, "NO FILE 1", lifted)
     results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
-    results['fail']["LIFTED ERR"].append(testpath)
+    results['fail']["LIFTED ERR"].append(lifted)
 
   else: #os.path.exists(lifted)
     if not os.path.exists(lifted_lifted):
       printTest("Compare Lifted", False, "NO FILE 2", lifted_lifted)
       results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
-      results['fail']["LIFTED ERR"].append(testpath)
+      results['fail']["LIFTED ERR"].append(lifted_lifted)
 
     else: #os.path.exists(lifted_lifted):
       comparison = filecmp.cmp(lifted, lifted_lifted)
@@ -275,7 +275,7 @@ def compareLifted(lifted, lifted_lifted, results):
       if not comparison:
         printTest("Compare Lifted", False, "DIFFERENT", lifted_lifted)
         results['lifted_cmp'][1] = results['lifted_cmp'][1] + 1
-        results['fail']["LIFTED ERR"].append(testpath)
+        results['fail']["LIFTED ERR"].append(lifted_lifted)
 
       else: # comparison == True
         printTest("Compare Lifted", True, "", lifted_lifted)
