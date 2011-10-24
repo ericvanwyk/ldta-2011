@@ -485,7 +485,7 @@ def main():
   ## results[test_type] = [num_pass, num_fail]
   ## results['fail'][fail_type] = [fail_path0, fail_path1, ...]
   results = {'positive':[0,0], 'name_type':[0,0], 'parse':[0,0], 'lifted_cmp':[0,0], 'compile_c':[0,0], 'run_c':[0,0], 'expected_cmp':[0,0],
-             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[], "NO EXP FILE":[], "NO STDOUT FILE":[], "EXP CMP":[], "NO LINE":[]} }
+             'fail':{"ERROR":[], "NO ERROR":[], "WRONG LINE":[], "STDERR":[], "WRONG ERR":[], "LIFTED CMP":[], "GCC ERR":[], "NO C FILE":[], "NO EXP FILE":[], "NO STDOUT FILE":[], "EXP CMP":[], "NO LINE":[], "LIFTED ERR":[]} }
 
 
   #####################################################################
