@@ -1,0 +1,20 @@
+MODULE A;
+TYPE I = INTEGER;
+VAR x : I;
+PROCEDURE T(VAR x : I);
+  TYPE I = RECORD x: INTEGER END;  
+  VAR y : I;
+  PROCEDURE G(VAR x : I);
+  BEGIN
+    x.x := -90
+  END G;
+BEGIN
+  y.x := x;
+  G(y);
+  x := y.x
+END T;
+BEGIN
+  T(x);
+  Write(x);
+  WriteLn
+END A.
