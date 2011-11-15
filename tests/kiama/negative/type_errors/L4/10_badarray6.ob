@@ -1,0 +1,11 @@
+MODULE badarray6;
+
+TYPE
+    atype4 = ARRAY 10 OF INTEGER;
+    
+VAR
+    array1 : atype4;
+    
+BEGIN
+    array1[array1] := 2;
+END badarray6.

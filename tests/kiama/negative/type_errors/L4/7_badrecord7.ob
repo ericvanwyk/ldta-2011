@@ -1,0 +1,8 @@
+MODULE badrecord7;
+
+VAR
+    rec2 : RECORD h : INTEGER; r : RECORD i : INTEGER; j : BOOLEAN END END;
+    
+BEGIN
+    rec2.h := rec2.r.k
+END badrecord7.

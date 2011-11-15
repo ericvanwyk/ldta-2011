@@ -1,0 +1,6 @@
+MODULE badarray3;
+
+TYPE
+    atype3 = ARRAY TRUE OF INTEGER;
+
+END badarray3.

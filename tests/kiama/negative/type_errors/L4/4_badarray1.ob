@@ -1,0 +1,6 @@
+MODULE badarray1;
+
+TYPE
+    atype1 = ARRAY -1 OF INTEGER;
+
+END badarray1.

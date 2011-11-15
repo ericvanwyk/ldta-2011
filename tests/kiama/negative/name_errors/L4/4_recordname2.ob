@@ -1,0 +1,6 @@
+MODULE recordname2;
+
+TYPE
+    arecord3 = RECORD x, x : INTEGER END;
+
+END recordname2.
