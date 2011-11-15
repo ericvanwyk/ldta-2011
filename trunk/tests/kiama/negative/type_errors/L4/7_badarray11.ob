@@ -1,0 +1,8 @@
+MODULE badarray11;
+
+VAR
+    abool : BOOLEAN;
+    
+BEGIN
+    abool[3] := 4
+END badarray11.

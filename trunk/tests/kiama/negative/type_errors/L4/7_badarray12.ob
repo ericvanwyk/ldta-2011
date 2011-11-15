@@ -1,0 +1,8 @@
+MODULE badarray8;
+
+VAR
+    array2 : ARRAY 26 OF BOOLEAN;
+    
+BEGIN
+    array2 := array2 + 1
+END badarray8.

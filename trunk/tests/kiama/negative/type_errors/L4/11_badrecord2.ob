@@ -1,0 +1,12 @@
+MODULE badrecord2;
+
+TYPE
+    arecord2 = RECORD f : BOOLEAN; x : INTEGER END;
+
+VAR
+    rec1 : arecord2;
+    rec2 : RECORD h : INTEGER; r : RECORD i : INTEGER; j : BOOLEAN END END;
+    
+BEGIN
+    rec2 := rec1 + rec2
+END badrecord2.

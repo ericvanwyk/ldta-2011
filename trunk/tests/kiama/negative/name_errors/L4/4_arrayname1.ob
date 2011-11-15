@@ -1,0 +1,6 @@
+MODULE arrayname1;
+
+TYPE
+    atype1 = ARRAY 10 OF atype0;
+
+END arrayname1.

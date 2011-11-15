@@ -1,0 +1,12 @@
+MODULE badarray5;
+
+TYPE
+    atype4 = ARRAY 10 OF INTEGER;
+    
+VAR
+    array1 : atype4;
+    abool : BOOLEAN;
+    
+BEGIN
+    array1[abool] := 1;
+END badarray5.
