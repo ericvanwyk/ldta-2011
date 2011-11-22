@@ -1,9 +1,0 @@
-MODULE badarray2;
-
-CONST
-    size = 5;
-
-TYPE
-    atype2 = ARRAY size DIV 6 OF BOOLEAN;
-
-END badarray2.
