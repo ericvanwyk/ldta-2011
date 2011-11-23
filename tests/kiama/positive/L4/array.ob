@@ -19,7 +19,8 @@ BEGIN
     avar1[avar4 * 3] := FALSE;
     avar2[3][2] := 2;
     avar3[avar3[0]] := avar3[1] * avar3[2];
-    FOR avar3[1] := 1 TO 10 DO
-        avar3[2] := avar3[2] + 1
+    CASE avar3[1] OF
+        1 : avar3[2] := avar3[2] + 1
+      | 2 .. 4 : avar3[1] := 1
     END
 END array.
