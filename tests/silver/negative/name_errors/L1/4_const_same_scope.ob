@@ -3,6 +3,4 @@ MODULE ConstSameScope;
 CONST x = 3;
       x = 4;
 
-VAR b: STUFF;
-
 END ConstSameScope.
