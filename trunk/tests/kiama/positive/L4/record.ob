@@ -19,7 +19,8 @@ BEGIN
     avar2.two.a := TRUE;
     avar3.tag := FALSE;
     avar3.rec := 42;
-    FOR avar0.x := 1 TO 10 DO
-        avar2.one := avar2.one + 1
+    CASE avar0.x OF
+        1 : avar0.x := 2
+      | 2, 3 : avar0.x := 3
     END
 END record.
