@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## To run artefact-specific tests, use the '-A#' option (sub 1, 2a, 2b, 3, or 4 for '#')
+## To run artefact-specific tests, use the 'A#' option (sub 1, 2a, 2b, 3, 4 or 5 for '#')
 
 if test $# -ne 1
 then
