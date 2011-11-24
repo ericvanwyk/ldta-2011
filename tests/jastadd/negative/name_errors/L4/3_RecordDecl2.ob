@@ -1,5 +1,0 @@
-MODULE TestModule;
-	VAR a : RECORD
-				a, a : INTEGER
-			END;
-END TestModule.
