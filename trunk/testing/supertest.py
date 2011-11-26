@@ -12,6 +12,7 @@ TESTS = None
 LEVEL = None
 CODEGEN = False
 REFERENCE_COMPILER = False
+NO_LIFTED = False
 
 #######################################################################
 # Runs all tests for Silver's implementation of Oberon0
@@ -429,6 +430,7 @@ def main():
   global LEVEL
   global CODEGEN
   global REFERENCE_COMPILER
+  global NO_LIFTED
 
   if len(sys.argv) > 1:
     ## Is the level specified?
@@ -474,6 +476,13 @@ def main():
       REFERENCE_COMPILER = True
       sys.argv.remove('-ref')
 
+    if '-nolifted' in sys.argv:
+      NO_LIFTED = True
+      print sys.argv
+      print "Set Lifted"
+      sys.argv.remove('-nolifted')
+      print sys.argv
+
     ## What's left is the running command
     COMMAND = " ".join(sys.argv[1:])
   else:
@@ -501,7 +510,7 @@ def main():
   for test_dir in glob.glob(os.path.join(PATH_TO_TEST, "*/positive/L*/*.ob*")):
     if not '_pp' in test_dir and not '_lifted' in test_dir:
       all_tests.append(test_dir)
-
+	
 
   for test_dir in glob.glob(os.path.join(PATH_TO_TEST, "*/negative/*_errors/L*/*.ob*")):
     if not '_pp' in test_dir and not '_lifted' in test_dir:
@@ -551,7 +560,7 @@ def main():
 
                 ## run the compiler on file_lifted.ob(0?), check for no errors
                 lifted_success = runPositiveTest(test_lifted, results)
-                if lifted_success:
+                if not NO_LIFTED and lifted_success:
                   compareLifted(test_lifted, test_lifted_lifted, results)
 
                 ## run gcc on file.c, check for zero value return code
