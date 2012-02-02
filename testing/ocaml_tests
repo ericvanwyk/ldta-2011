@@ -1,0 +1,15 @@
+#!/bin/bash
+
+OPTIONS=""
+
+case "$@" in
+  -A1)  OPTIONS="-f -l 2 -r" ;;
+  -A2a) OPTIONS="-f -l 3 -r" ;;
+  -A2b) OPTIONS="-f -l 2 -t" ;;
+  -A3)  OPTIONS="-f -l 3 -t" ;;
+  -A4)  OPTIONS="-f -l 4 -c" 
+esac
+
+## Run supertest.py with Ocaml implemenation of Oberon compiler
+python supertest.py $@ -nolifted oberon0.opt $OPTIONS
+
