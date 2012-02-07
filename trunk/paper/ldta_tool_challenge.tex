@@ -21,7 +21,7 @@
 %% $Id: elsarticle-template-1-num.tex 149 2009-10-08 05:01:15Z rishi $
 %% $URL: http://lenova.river-valley.com/svn/elsbst/trunk/elsarticle-template-1-num.tex $
 %%
-\documentclass[preprint,12pt]{elsarticle}
+\documentclass[english,preprint,12pt]{elsarticle}
 
 %% Use the option review to obtain double line spacing
 %% \documentclass[preprint,review,12pt]{elsarticle}
@@ -74,6 +74,13 @@
 
 % \biboptions{}
 
+\usepackage{listings}
+\usepackage{url}
+\usepackage{babel}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{subfig}
+
 
 \journal{Science of Computer Programming}
 
@@ -121,10 +128,13 @@
 
 \author[mq]{Anthony M. Sloane}
 
+\author[cy]{Margus Freudenthal}
+
 \address[tue]{Technical University of Eindhoven, Eindhoven, The Netherlands}
 \address[umn]{University of Minnesota, Minneapolis, MN, United States}
 \address[lu]{Lund University, Lund, Sweden}
 \address[mq]{Macquarie University, Sydney, Australia}
+\address[cy]{Cybernetica AS / University of Tartu, Tartu, Estonia}
 
 \begin{abstract}
 
@@ -173,6 +183,7 @@ Oberon, levels, challenges and examples
 \input{jastadd/jastadd}
 \input{ocaml/ocaml}
 \input{kiama/kiama}
+\input{simpl/simpl}
 
 \section{Comparison of implementations}
 \label{sec:comparison}
@@ -215,7 +226,7 @@ Appendix contains example of Oberon code with line numbers
 
 %\bibliographystyle{model1-num-names}
 \bibliographystyle{elsarticle-num}
-\bibliography{silver/silver,jastadd/jastadd,ocaml/ocaml,kiama/kiama}
+\bibliography{silver/silver,jastadd/jastadd,ocaml/ocaml,kiama/kiama,simpl/simpl}
 
 %% Authors are advised to submit their bibtex database files. They are
 %% requested to list a bibtex style file in the manuscript if they do
