@@ -339,9 +339,9 @@ it does not clash with any identifiers in this scope.
 
 %
 \begin{figure}[!h]
-\begin{tabular}{>{\centering}p{0.48\textwidth}>{\centering}p{0.48\textwidth}}
+\begin{tabular}{>{\centering}p{0.35\textwidth}>{\centering}p{0.55\textwidth}}
 {\footnotesize }
-\begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
+\begin{lstlisting}[basicstyle={\footnotesize\ttfamily},showlines=true]
 CASE foo + bar OF
       1 : Write(1)
     | 3..4 : Write(34)
@@ -358,6 +358,7 @@ END;
 \subfloat[\label{fig:case-before}]{} & {\footnotesize }
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
 VAR gen_1: INTEGER;
+...
 gen_1 := foo + bar;
 IF gen_1 = 1 THEN
     Write(1)
@@ -395,9 +396,9 @@ library included in Simpl.
 Figure \ref{fig:code-generation} illustrates the code generation
 process with an example procedure for calculating factorial. Since
 Oberon0 has no functions, the result is returned in a \emph{VAR} parameter.
-Whereas AST of the Oberon0 \emph{FOR} statement (see Figure \ref{fig:codegen-oberon})
+Whereas AST of the Oberon0 \emph{FOR} statement (see Figure \ref{fig:code-generation}b)
 corresponds to Oberon0 syntax, the translated \emph{for} statement
-(see Figure \ref{fig:codegen-c-ast}) corresponds to C syntax (initialization
+(see Figure \ref{fig:code-generation}c) corresponds to C syntax (initialization
 and increment are statements, guard is an arbitrary expression). During
 the translation, all the identifiers are prefixed with underscore
 to prevent clashes with existing keywords.
@@ -406,23 +407,21 @@ to prevent clashes with existing keywords.
 \begin{figure}[!h]
 \begin{tabular}{>{\raggedright}p{0.48\textwidth}>{\centering}p{0.48\textwidth}}
 
-\begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
+\begin{lstlisting}[basicstyle={\footnotesize\ttfamily},escapechar={\%}]
 PROCEDURE Fact(
     n: INTEGER;
     VAR Res: INTEGER);
   VAR i: INTEGER;
 BEGIN
   Res := 1;
-  FOR i := 1 TO n DO
-    Res := Res * i;
-  END
+  %\texttt{\textbf{FOR i := 1 TO n DO}}%
+    %\texttt{\textbf{Res := Res * i;}}%
+  %\texttt{\textbf{END}}%
 END Fact;
 \end{lstlisting}
 
 
-\noindent Oberon0 source before code generation.
-
-\noindent \subfloat[\label{fig:codegen-oberonsource}]{}  & 
+(a) Oberon0 source before code generation. & 
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
 ForStatement(
  Id(i),
@@ -437,9 +436,7 @@ ForStatement(
 \end{lstlisting}
 
 
-Oberon0 AST corrensponding to the highlighted \emph{FOR} statement.
-
-\subfloat[\label{fig:codegen-oberon}]{}\tabularnewline
+(b) Oberon0 AST corrensponding to the highlighted \emph{FOR} statement.\tabularnewline
 
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
 For(
@@ -455,23 +452,21 @@ For(
   List(
    Assign(
     Id(_Res,true),
-   Binary(
-    *,
-    Id(_Res,true),
-    Id(_i,false))))))
+    Binary(
+     *,
+     Id(_Res,true),
+     Id(_i,false))))))
 \end{lstlisting}
 
 
-\emph{FOR} statement translated to AST representing a C program.
-
-\subfloat[\label{fig:codegen-c-ast}]{} & 
-\begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
+(c) \emph{FOR} statement translated to AST representing a C program. & 
+\begin{lstlisting}[basicstyle={\footnotesize\ttfamily},escapechar={\%},showlines=true]
 void _Fact(int _n,int *_Res) {
-    int _i;
-    (*_Res) = 1;
-    for (_i = 1; _i <= _n; _i += 1) {
-        (*_Res) = (*_Res) * _i;
-    }
+  int _i;
+  (*_Res) = 1;
+  %\texttt{\textbf{for (\_i = 1; \_i <= \_n; \_i += 1) \{}}%
+    %\texttt{\textbf{({*}\_Res) = ({*}\_Res) {*} \_i;}}%
+  %\texttt{\textbf{\}}}%
 }
  
  
@@ -481,13 +476,13 @@ void _Fact(int _n,int *_Res) {
  
  
  
+ 
+ 
 \end{lstlisting}
 
 
-C source generated from the function in sub-figure (a). The highlighted
-\emph{for} statement corresponds to AST from sub-figure (c).
-
-\subfloat[\label{fig:codegen-c-text}]{}\tabularnewline
+(d) C source generated from the function in sub-figure (a). The highlighted
+\emph{for} statement corresponds to AST from sub-figure (c).\tabularnewline
 \end{tabular}
 
 \caption{\label{fig:code-generation}Code generation example: translating the
