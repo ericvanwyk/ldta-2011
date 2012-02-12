@@ -1,4 +1,6 @@
-\section{OCaml}
+\section{Objective Caml}
+
+\cite{OcamlDef, PV, PVReuse, Exproblem, Remy, Monads, MonadicParserCombinators}
 
 \subsection{Introduction}
 
@@ -10,7 +12,49 @@
 
 \subsection{Source-to-source transformation}
 
+All source-to-source transformations are actually performed on the name-resolved AST; then
+modified AST is pretty-printed. These transformations maintain all the invariants of
+the name-resolved AST so it subsequently can be typechecked or undergo further 
+transformations. Note that this approach simplifies the implementation a lot since all name 
+disambiguation is performed on the name resolution stage.
+
+Since sometimes we need a new names to be generated (for example for capturing the upper bound of
+FOR statement during lowering) we also provide the name generation helper which is constructed
+on the name resolution stage and then is passed to the transformation functions as a parameter.
+
+In the following subsections we consider the individual transformations.
+
+\subsubsection{Lowering}
+
+Lowering projects extended statements of L2 (FOR- and CASE- statements) into the composition
+of simple statements of L1. 
+
+\begin{lstlisting}[language=ocaml]
+let ostap (
+  qexpr[qc]: "$" i:ident {qc i};
+  expr [qc]: !(SimpleExpression.parse)[qexpr qc];
+  stmt [qc]: !(SimpleStatement.parse)[expr qc][expr qc][stmt qc];
+  stmts[qc]: oseq[stmt qc] -EOF
+)
+\end{lstlisting}
+
+\subsubsection{Type lifting}
+
+
+\subsubsection{Function lifting}
+
+
+
 \subsection{Code generation}
+
+There is no dedicated code generation pass in our implementation --- we consider C representation
+as an alternative concrete syntax for the name-resolved AST. Pretty-printers for the relevant
+structures (simple expressions with L4 references, simple statements with procedure calls, 
+type-, variable- and procedure declarations) are implemented in a generic form: they takes a
+\emph{printing scheme} which encapsulates the concrete syntax elements as an additional
+parameter. Note that we need a name-resolved tree to distinguish, for example, referenced-passed
+function parameters from value-passed ones in both function argument declaration list, all
+their usages within the function body and actual parameters of function invocation.
 
 \subsection{Artifacts}
 
