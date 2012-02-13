@@ -27,7 +27,49 @@ In the following subsections we consider the individual transformations.
 \subsubsection{Lowering}
 
 Lowering projects extended statements of L2 (FOR- and CASE- statements) into the composition
-of simple statements of L1. 
+of simple statements of L1. This transformation is implemented using monadic transformation
+with list monad since generally we transform a single statement (say, FOR) into the list
+of statements. The skeleton code for the transformation is as follows:
+
+\begin{lstlisting}[language=ocaml]
+let lower ext stmt =
+  let module M = SimpleStatement.Mapper (Monad.List) in 
+  let module E = ExtendedStatement.Mapper (Monad.List) in
+  M.gmap 
+    (fun self stmt ->
+       E.gmap (ext self)
+              (object
+                 method case _ e b s = ...
+                 method forc _ i l u s b = ...
+               end
+              ) 
+              Monad.List.return 
+              Monad.List.return 
+              Monad.List.return 
+              stmt
+    )
+    (SimpleStatement.mapT (fun _ s -> [s])) 
+    Monad.List.return 
+    Monad.List.return
+    stmt
+\end{lstlisting}
+
+Here ``\lstinline{ext}'', as usually, stands for the extension transformation. This skeleton
+code just propagates the lowering transformation through all the constructs of the AST. All
+nontrivial work is done by methods ``\lstinline{case}'' and 
+``\lstinline{forc}''\footnote{``\lstinline{for}'' is a reserved word in OCaml.} which are 
+called when the corresponding construct is encountered in the tree.
+
+Method ``\lstinline{case}'' takes the original statement (which actually never used for the lowering, 
+hence the wildcard symbol ``\lstinline{_}'' as a parameter placeholder), key expression ``\lstinline{e}'',
+list of conditional branches ``\lstinline{b}'' and the else branch ``\lstinline{s}'' and transforms it 
+into the compound \mbox{IF-THEN-ELSIF-...-END} statement with the key value captured into the fresh variable.
+Method ``\lstinline{forc}'' operates in a similar manner.
+
+During lowering we sometimes need to construct new fragments of AST; we facilitate this task
+with the help of \emph{quotations}. A quotation is just a parser which converts a parameterized 
+string into a fragment of AST. For our needs the following definition of quotation parsers was
+sufficient:
 
 \begin{lstlisting}[language=ocaml]
 let ostap (
@@ -38,19 +80,146 @@ let ostap (
 )
 \end{lstlisting}
 
+In short, our quotations parse arbitrary simple expressions and statements with the special form of
+references --- identifiers preceded by the symbol ``\$''. Each identifier is substituted with a
+some subtree during the parsing process. The substitution function ``\lstinline{qc}'' --- 
+\emph{qoutation context} --- is provided as a parameter for the parser. 
+
+With the help of quotations the transformation implementation becomes more concise --- for example, 
+we can use the expression
+
+\begin{lstlisting}[language=ocaml]
+   qe ["k", k; "l", l; "u", u] "($k >= $l) & ($k <= $u)"
+\end{lstlisting}
+
+for checking if the value of key CASE expression ``\lstinline{k}'' fits in the range with boundaries
+``\lstinline{l}'' and ``\lstinline{u}'' of certain case branch instead of tedious encoding of corresponding 
+AST with its node constructors. Here ``\lstinline{qe}'' is just a wrapper for the parser ``\lstinline{expr}''
+defined in the former code snippet which additionally takes a quotation context represented by an associative 
+list.
+
+Note that the quotation functionality is implemented in a completely independent manner to the ``main'' parsers ---
+none of them are aware of quotation definitions which are kept completely local to the lowering function. Note also
+that quotation parsing provides already name-resolved AST since all quotation arguments are substituted with 
+the name-resolved subtrees.
+
 \subsubsection{Type lifting}
 
+Type lifting moves type definitions enclosed in procedures to the top level. These definitions can not be
+kept inside the procedures since after procedure lifting some references to them might run out
+of scope. This transformation is handcoded; nothing interesting is done here since all type names are 
+already disambiguated.
 
-\subsubsection{Function lifting}
+\subsubsection{Procedure lifting}
 
+Procedure lifting transformation in our implementation comprises two transformations:
 
+\begin{itemize}
+\item Elementary procedure lifting which moves nested procedure to the top level. This transformation, 
+preceded by the type lifting, is performed prior to C generation for language L4. Similarly to the type lifting, 
+this is just a primitive transformation which is handcoded.
+
+\item Lambda-lifting which promotes (some) local variables and parameters of a procedure into the
+argument lists of its nested subprocedures with corresponding call statements modifications. Note that in
+our implementation lamba lifting \emph{does not move} procedure declarations to the top level.
+\end{itemize}
+
+While elementary lifting is used to project L4 into itself prior to C generation the lambda lifting
+projects L5 into the some superset of L4 (since even after the lambda-lifting the program can still violate
+some L4 visibility rules for procedure declarations). 
+
+Our lambda-lifting implementation is desomposed into the following subtasks:
+
+\begin{itemize}
+\item Inspection. During this stage we traverse the AST of the program and for each procedure collect the 
+names of all called procedures and the names of all non-local variables used in its body. The most of the 
+traversal is performed using generic transformers with identity monad; the gathered information is 
+collected in a mutable data structures. 
+
+\item Propagation. On this stage we propagate the collected non-local usage information through the call
+graph represented by the mapping between caller and callees. This pass is handcoded.
+
+\item Modification. During this stage the program is rewritten into lambda-lifted form using the information
+provided by the previous two stages. This rewriting involves changing the declaration of procedures and
+their call sites, replacing usages of non-local variables into usages of procedure arguments, passed by 
+reference, and introducing the type synonyms for the types of those local variables whose usages in 
+nested procedures resulted in passing them as parameters. Most of the work is again performed by
+generic transformers for identity monad.
+\end{itemize}
+
+Note that we again heavily utilize the name disambiguation performed on the name resolution stage --- we do
+not need neither new names for the lifted procedure arguments nor the correspondence between newly introduced
+formal and actual parameters since we can simply use the same name for the formal and actual parameter.
+
+Despite the fact that application of generic monadic transformers simplified the implementation a lot the
+lambda-lifting is still the most cumbersome and hard-to-understand part of our compiler.
+
+As an observable result consider the following L5 program:
+
+\begin{lstlisting}[language=oberon0]
+MODULE L;
+  PROCEDURE T;
+    VAR i : INTEGER; a : ARRAY 10 OF INTEGER;
+    PROCEDURE Init;
+    BEGIN
+      FOR i:=1 TO 10 DO a[i] := i END
+    END Init;
+  BEGIN
+    Init ()  
+  END T;
+BEGIN
+  T ()
+END L.
+\end{lstlisting}
+
+The source-to-source transformation is performed in the following order:
+
+\begin{itemize}
+\item Type lifting;
+\item Lambda-lifting;
+\item Procedure lifting;
+\item Lowering.
+\end{itemize}
+
+As a result the following L4-code in produced:
+
+\begin{lstlisting}[language=oberon0]
+MODULE L;
+  TYPE
+    typename = ARRAY 10 OF INTEGER;
+  PROCEDURE global_top_T_Init 
+  (VAR global_top_T_a : typename; 
+   VAR global_top_T_i : INTEGER);
+  VAR
+    upb : INTEGER;
+  BEGIN
+    global_top_T_i := 1; 
+    upb := 10; 
+    WHILE (1 > 0) & (global_top_T_i <= upb) OR 
+          (1 <= 0) & (global_top_T_i >= upb)
+      DO
+        global_top_T_a[global_top_T_i] := global_top_T_i; 
+        global_top_T_i := global_top_T_i + 1
+      END
+  END global_top_T_Init;
+  PROCEDURE global_top_T ();
+  VAR
+    global_top_T_i : INTEGER;
+    global_top_T_a : typename;
+  BEGIN
+    global_top_T_Init (global_top_T_a, global_top_T_i)
+  END global_top_T;
+  BEGIN
+    global_top_T ()
+END L.
+\end{lstlisting}
 
 \subsection{Code generation}
 
 There is no dedicated code generation pass in our implementation --- we consider C representation
-as an alternative concrete syntax for the name-resolved AST. Pretty-printers for the relevant
+as an alternative concrete syntax for the name-resolved (and lifted) AST. Pretty-printers for the relevant
 structures (simple expressions with L4 references, simple statements with procedure calls, 
-type-, variable- and procedure declarations) are implemented in a generic form: they takes a
+type-, variable- and procedure declarations) are implemented in a generic form: they take a
 \emph{printing scheme} which encapsulates the concrete syntax elements as an additional
 parameter. Note that we need a name-resolved tree to distinguish, for example, referenced-passed
 function parameters from value-passed ones in both function argument declaration list, all
