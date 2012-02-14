@@ -8,18 +8,79 @@
 
 \subsection{Name analysis}
 
+The name analysis in our implementation in fact performs the following tasks:
+
+\begin{itemize}
+\item \emph{Kind analysis} --- the verification of proper usage of each name for each context this
+name appers in. For example, left side of assignment should designate variable or procedure argument,
+all references in constant expressions should designate constants etc.
+\item \emph{Constant evaluation} --- the replacement of each constant expression with
+its value;
+\item \emph{Proper name analysis} --- establishing the relation between the usage of
+named entity and its declaration;
+\item \emph{Name disambiguation} --- assigning to each named entity in the program a unique
+name preserving its declaration-usages coherence.
+\end{itemize}
+
+From the technical point of view the functionality of name analysis is again implemented as a 
+one-pass monadic transformer with the exception monad \lstinline{Checked} and a mutable symbol 
+table. This transformer actually propagates the results of reference analysis through the 
+entire AST. For example, for extended statements of L2 the transformer itself looks like
+the following:
+
+\begin{lstlisting}[language=ocaml]
+let resolve ref cexpr expr ext stmt =
+  cmap ext 
+       (mapT (fun _ s -> Monad.Checked.return s)) 
+       ref 
+       cexpr 
+       expr 
+       stmt
+\end{lstlisting}
+
+Note that we encode various contexts parametrically: here ``\lstinline{ref}'' corresponds
+to the reference checking function, ``\lstinline{cexpr}'' --- to the constant expression 
+checking function, ``\lstinline{expr}'' --- to the gerenic expression checking function
+so actually we perform kind analysis by discriminating the cases already encoded in
+the AST data structure in a type-parametric manner. 
+
+Each expression checking function is itself aquired by applying the generic transformer 
+for expressions to reference-checking routine of certain kind. For example, expression 
+name analysis for L1 is encoded in the following manner:
+
+\begin{lstlisting}[language=ocaml]
+let reference env ext = 
+  function
+  | `Ident name -> 
+       env#lookup name >= 
+       (function x -> `Ident (env#extractInternal x, x))
+  | x -> ext x
+
+let expression env expr = 
+  SimpleExpression.resolve (reference env) expr 
+\end{lstlisting}
+
+Here ``\lstinline{ext}'' is an extension for name-analysis function for references. This 
+extension is provided later in the extended languges to handle the references of other kinds.
+
+Name analysis converts the initially parsed AST into the structure of incompatible 
+type. From one hand this approach enforces the safety of the compiler since, for example, an attempt
+to typecheck unresolved program will not pass the typechecker; on the other hand this
+safety has its' cost --- for example, a separate pretty-printer is required for a
+name-resolved tree. 
+
 \subsection{Type checking}
 
 \subsection{Source-to-source transformation}
 
 All source-to-source transformations are actually performed on the name-resolved AST; then
-modified AST is pretty-printed. These transformations maintain all the invariants of
+the modified AST is pretty-printed. These transformations maintain all the invariants of
 the name-resolved AST so it subsequently can be typechecked or undergo further 
 transformations. Note that this approach simplifies the implementation a lot since all name 
 disambiguation is performed on the name resolution stage.
 
-Since sometimes we need a new names to be generated (for example for capturing the upper bound of
-FOR statement during lowering) we also provide the name generation helper which is constructed
+Since sometimes we need a new names to be generated (for example for capturing the upper bounds of
+FOR statements during lowering) we also provide the name generation helper which is constructed
 on the name resolution stage and then is passed to the transformation functions as a parameter.
 
 In the following subsections we consider the individual transformations.
@@ -28,7 +89,7 @@ In the following subsections we consider the individual transformations.
 
 Lowering projects extended statements of L2 (FOR- and CASE- statements) into the composition
 of simple statements of L1. This transformation is implemented using monadic transformation
-with list monad since generally we transform a single statement (say, FOR) into the list
+using list monad since generally we transform a single statement (say, FOR) into the list
 of statements. The skeleton code for the transformation is as follows:
 
 \begin{lstlisting}[language=ocaml]
@@ -60,16 +121,17 @@ nontrivial work is done by methods ``\lstinline{case}'' and
 ``\lstinline{forc}''\footnote{``\lstinline{for}'' is a reserved word in OCaml.} which are 
 called when the corresponding construct is encountered in the tree.
 
-Method ``\lstinline{case}'' takes the original statement (which actually never used for the lowering, 
-hence the wildcard symbol ``\lstinline{_}'' as a parameter placeholder), key expression ``\lstinline{e}'',
-list of conditional branches ``\lstinline{b}'' and the else branch ``\lstinline{s}'' and transforms it 
+Method ``\lstinline{case}'' takes the original AST node for the CASE statement 
+(which actually never used for the lowering, hence the wildcard symbol ``\lstinline{_}'' 
+as a parameter placeholder), and its immediate subtrees --- key expression ``\lstinline{e}'',
+list of conditional branches ``\lstinline{b}'' and the else branch ``\lstinline{s}'' --- and transforms it 
 into the compound \mbox{IF-THEN-ELSIF-...-END} statement with the key value captured into the fresh variable.
 Method ``\lstinline{forc}'' operates in a similar manner.
 
-During lowering we sometimes need to construct new fragments of AST; we facilitate this task
+During lowering we sometimes need to construct a new fragments of AST; we facilitate this task
 with the help of \emph{quotations}. A quotation is just a parser which converts a parameterized 
-string into a fragment of AST. For our needs the following definition of quotation parsers was
-sufficient:
+string into a fragment of AST. For our needs the following definition of quotation parsers turned out 
+to be sufficient:
 
 \begin{lstlisting}[language=ocaml]
 let ostap (
@@ -83,7 +145,7 @@ let ostap (
 In short, our quotations parse arbitrary simple expressions and statements with the special form of
 references --- identifiers preceded by the symbol ``\$''. Each identifier is substituted with a
 some subtree during the parsing process. The substitution function ``\lstinline{qc}'' --- 
-\emph{qoutation context} --- is provided as a parameter for the parser. 
+\emph{quotation context} --- is provided as a parameter for the parser. 
 
 With the help of quotations the transformation implementation becomes more concise --- for example, 
 we can use the expression
@@ -92,8 +154,8 @@ we can use the expression
    qe ["k", k; "l", l; "u", u] "($k >= $l) & ($k <= $u)"
 \end{lstlisting}
 
-for checking if the value of key CASE expression ``\lstinline{k}'' fits in the range with boundaries
-``\lstinline{l}'' and ``\lstinline{u}'' of certain case branch instead of tedious encoding of corresponding 
+for checking if the value of CASE key expression ``\lstinline{k}'' fits in the range with boundaries
+``\lstinline{l}'' and ``\lstinline{u}'' of a certain case branch instead of tedious encoding of corresponding 
 AST with its node constructors. Here ``\lstinline{qe}'' is just a wrapper for the parser ``\lstinline{expr}''
 defined in the former code snippet which additionally takes a quotation context represented by an associative 
 list.
@@ -112,39 +174,39 @@ already disambiguated.
 
 \subsubsection{Procedure lifting}
 
-Procedure lifting transformation in our implementation comprises two transformations:
+Procedure lifting in our implementation comprises two transformations:
 
 \begin{itemize}
-\item Elementary procedure lifting which moves nested procedure to the top level. This transformation, 
-preceded by the type lifting, is performed prior to C generation for language L4. Similarly to the type lifting, 
-this is just a primitive transformation which is handcoded.
+\item \emph{Elementary procedure lifting} which moves nested procedures to the top level. This transformation, 
+preceded by the type lifting, is performed prior to C generation for the language L4. Similarly to the type 
+lifting, this is just a primitive transformation which is handcoded.
 
-\item Lambda-lifting which promotes (some) local variables and parameters of a procedure into the
+\item \emph{Lambda-lifting} which promotes (some) local variables and parameters of a procedure into the
 argument lists of its nested subprocedures with corresponding call statements modifications. Note that in
 our implementation lamba lifting \emph{does not move} procedure declarations to the top level.
 \end{itemize}
 
 While elementary lifting is used to project L4 into itself prior to C generation the lambda lifting
-projects L5 into the some superset of L4 (since even after the lambda-lifting the program can still violate
-some L4 visibility rules for procedure declarations). 
+projects L5 into the some language which is actually a superset of L4 (since even after the lambda-lifting 
+the program can still violate some L4 visibility rules for procedure declarations). 
 
-Our lambda-lifting implementation is desomposed into the following subtasks:
+Our lambda-lifting implementation is decomposed into the following passes:
 
 \begin{itemize}
-\item Inspection. During this stage we traverse the AST of the program and for each procedure collect the 
-names of all called procedures and the names of all non-local variables used in its body. The most of the 
+\item \emph{Inspection}. During this stage we traverse the AST of the program and for each procedure collect the 
+names of all called procedures and all used non-local variables. The most of the 
 traversal is performed using generic transformers with identity monad; the gathered information is 
 collected in a mutable data structures. 
 
-\item Propagation. On this stage we propagate the collected non-local usage information through the call
-graph represented by the mapping between caller and callees. This pass is handcoded.
+\item \emph{Propagation}. On this stage we propagate the collected non-local usage information through the call
+graph represented by the mapping between the caller and callees. This pass is handcoded.
 
-\item Modification. During this stage the program is rewritten into lambda-lifted form using the information
+\item \emph{Modification}. During this stage the program is rewritten into the lambda-lifted form using the information
 provided by the previous two stages. This rewriting involves changing the declaration of procedures and
 their call sites, replacing usages of non-local variables into usages of procedure arguments, passed by 
 reference, and introducing the type synonyms for the types of those local variables whose usages in 
 nested procedures resulted in passing them as parameters. Most of the work is again performed by
-generic transformers for identity monad.
+generic transformers with identity monad.
 \end{itemize}
 
 Note that we again heavily utilize the name disambiguation performed on the name resolution stage --- we do
