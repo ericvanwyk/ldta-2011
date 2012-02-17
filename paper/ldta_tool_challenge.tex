@@ -82,7 +82,7 @@
 \usepackage{graphicx}
 \usepackage{subfig}
 \usepackage{multirow}
-
+\usepackage{comment}
 \lstdefinelanguage{ocaml}{
 keywords={let, begin, end, in, match, type, and, fun, function, try, with, class, object, method, of, rec, repeat, until,
           while, not, do, done, as, val, inherit, module, sig, deriving, datatype, struct, if, then, else, ostap},
@@ -105,6 +105,13 @@ escapechar=~,
 }
 
 \journal{Science of Computer Programming}
+
+%%%% Rascal needed stuff
+\usepackage{xspace,rascal/rascal,float}
+%\floatstyle{ruled}
+\newfloat{listing}{htbp}{lol}
+\floatname{listing}{Listing}
+%%%% End Rascal needed stuff
 
 \begin{document}
 
@@ -147,6 +154,7 @@ escapechar=~,
 
 \author[lu]{Niklas Fors}
 \author[lu]{G{\"o}rel Hedin}
+\author[cwi]{Tijs van der Storm}
 
 \author[mq]{Anthony M. Sloane}
 
@@ -160,6 +168,7 @@ escapechar=~,
 \address[mq]{Macquarie University, Sydney, Australia}
 \address[cy]{Cybernetica AS / University of Tartu, Tartu, Estonia}
 \address[spbu]{St-Petersburg State University, St.Petersburg, Russia}
+\address[cwi]{Centrum Wiskunde \&\ Informatica, Amsterdam, The Netherlands}
 
 \begin{abstract}
 
@@ -206,7 +215,7 @@ Oberon, levels, challenges and examples
 
 \input{silver/silver}
 \input{jastadd/jastadd}
-\input{ocaml/ocaml}
+\input{rascal/rascal}
 \input{kiama/kiama}
 \input{simpl/simpl}
 
