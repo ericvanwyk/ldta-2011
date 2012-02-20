@@ -1,0 +1,94 @@
+#! /bin/sh
+#
+# Run the Kiama Oberon-0 compiler for the LDTA challenge.
+#  - uses -x option to enable challenge mode (eg only print line no of first error)
+#  - post-process the output of the compiler to create separate output files
+#
+# kobc artefact input.ob [options]
+#  - artefact indicates the artefact to run (eg A1)
+#  - input.ob is the name of the input Oberon-0 program
+#  - options: extra command-line options
+#
+# Configure the following variable:
+
+# Directory containing all of the JARs necessary to run the Oberon-0 implementation,
+# including the Scala runner and library
+JARDIR=$HOME/Projects/Kiama/repos/ldta-2011-classes
+
+# NO CHANGES SHOULD BE NECESSARY BELOW HERE
+
+# Get and check arguments
+case $# in
+    [01]) echo "usage: kobc A[1|2a|2b|3|4|5] input.ob"; exit 1;;
+    *) art=$1; input=$2; shift; shift;;
+esac
+
+case $art in
+    A1|A2a|A2b|A3|A4|A5) ;;
+    *) echo "kobc: unknown artefact '$art'"; exit 1;;
+esac
+
+# Temporary files for the input and output
+ITMP=/tmp/oberon0.itmp.$$
+OTMP=/tmp/oberon0.otmp.$$
+
+# Convert tabs to spaces in the input file so that the column coordinates make sense
+# FIXME: not really correct if tabs occur in string literals
+expand $input >$ITMP
+
+# JVM options
+JVM_OPTS=-Xss6M
+
+# Run the request artefact main
+main=org.kiama.example.oberon0.drivers.$art
+CP=`echo $JARDIR/*.jar | sed -e 's/ /:/g'`
+java $JVM_OPTS -classpath $CP $main -x $* $ITMP >$OTMP 2>&1
+
+# Look for obvious crashes and abort
+if egrep "(No such file)|(StackOverflow)" $OTMP >/dev/null
+then
+  head $OTMP
+  exit 1
+fi
+
+# Get name of the input file without extension to use for output file creation
+dir=`dirname $input`
+base=$dir/`basename $input .ob`
+
+# Default output to stdout
+ext=".stdout"
+
+# Post-process output to create the separate files
+# FIXME: assumes that there is a filename line before any real output
+IFS=''
+cat $OTMP |
+while read
+do
+    case $REPLY in
+        '* '*) ext=`echo $REPLY | sed 's/\* //'`
+               if echo $ext | grep '\.' >/dev/null 2>&1
+               then
+                   # contains period, so assume it's whole extension
+                   :
+               else
+                   # otherwise, make it into an extension
+                   ext=".$ext"
+               fi
+               file=$base$ext
+               if test $file -ot $OTMP
+               then
+                   rm -f $file
+               fi
+               ;;
+        *) if test $ext = ".stdout"
+           then
+               echo $REPLY
+           else
+               echo $REPLY >>$file
+           fi
+           ;;
+    esac
+done
+
+# Clean up
+rm -f $ITMP $OTMP
