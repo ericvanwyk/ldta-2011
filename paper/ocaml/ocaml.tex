@@ -12,8 +12,8 @@ The name analysis in our implementation in fact performs the following tasks:
 
 \begin{itemize}
 \item \emph{Kind analysis} --- the verification of proper usage of each name for each context this
-name appers in. For example, left side of assignment should designate variable or procedure argument,
-all references in constant expressions should designate constants etc.
+name appears in. For example, the left side of an assignment should designate variable or procedure argument,
+all references in a constant expression should designate constants etc.
 \item \emph{Constant evaluation} --- the replacement of each constant expression with
 its value;
 \item \emph{Proper name analysis} --- establishing the relation between the usage of
@@ -70,6 +70,35 @@ safety has its' cost --- for example, a separate pretty-printer is required for 
 name-resolved tree. 
 
 \subsection{Type checking}
+
+The type checking in our implementation follows the common scheme: we map the name-resolved
+AST of the program into its type-annotated counterpart. This transformation is
+actually superfluous for Oberon-0 since we do not need type information neither for
+source-to-source transformation nor for the C generation; yet we still implemented it in
+a generic form just to demonstrate the approach.
+
+The most work in the type-checking phase is done at the expression level. Since the 
+initial AST does not have any type information (and even doest not have any ``placeholders'' 
+for it) we map each expression into an isomorphic structure by \emph{pairing} each node 
+with the corresponding type. Note that this transformation does not preserve the type of
+the expression tree; it can not even be expressed by some parameterization of the
+expression tree type. For simplicity consider the expressions made of binary operations,
+constants and identifiers; then the type-pairing transformation would have the type
+
+\begin{lstlisting}[language=ocaml]
+([< `Binop of 'a * 'a | `Const of 'b | `Ident of 'c ] as 'a) ->
+([> `Binop of 'd * 'd | `Const of 'b | `Ident of 'c ] * typ as 'd)
+\end{lstlisting}
+
+where \lstinline{typ} stands for the type-representing type; in the actual implementation
+we should also take care of the extensibility of the type-checkers. All type-pairing
+transformations are performed using per-type generic transformers.
+
+Besides annotating the expression trees with the type information the type-checking 
+phase also performs the checking itself; due to the simplicity of the type system
+this checking consists of merely comparisons between expected and actual types of expressions
+in a various syntactic contexts.
+
 
 \subsection{Source-to-source transformation}
 
