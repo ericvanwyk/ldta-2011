@@ -1,0 +1,213 @@
+Commonalities, similarities, distinctions:
+-------------------------------------------
+
+A common feature of the approaches is some mechanism to solve the
+so-called Expression problem: inter-types in JastAdd, aspect
+productions in Silver, pattern-based dispatch in Rascal, traits/mixins
+in Kiama/Scala. I am not sure how or if Simpl and the Ocaml
+implementation do this.
+
+
+JastAdd and Silver both use reference attributes in their name
+analysis and type checking phases - as described in the JastAdd
+section, this allows the language developer to forgo building an
+explicit environment data structure to contain, for example,
+information on types.  Tony, does Kiama use reference attributes for
+name analysis?
+
+
+JastAdd supports a deeper hierarchy of types than Silver.  This is
+useful in providing default attribute equations for all productions of
+a specified non-terminal.  Silver's forwarding mechanism can be used
+to simulate this as forwarding is not unlike inheritance except that
+the tree node (object) from which default attribute values are
+retrieved is determined dynamically.  This can make the use of
+forwarding for default values a bit clumsy but the other uses of
+forwarding for language extension, in our opinion, make up for this. 
+I suspect Kiama supports deeper hierarchies like JastAdd does, but I
+am unsure about the others.
+
+
+JastAdd's implementation for code generation creates a new AST for to
+case-statement and for-loop to simplify the process.  This node for
+these statements then delegates code generation to this new AST.
+Forwarding provides a similar solution, but without the need for an
+explicit delegation specification as is done at the bottom of page 24
+for the ForStmt.  For an example like this it is not a big deal, but
+the need for explicit delegations does hinder some types of composable
+language extension.
+
+
+Rascal supports ADTs and parse trees - what is the
+distinction?  Non-terminals and productions are analogs to types and
+variants in ADTS.  Silver supports ADTs in this sense (w/ pattern
+matching).  Is there something different here?   Other approaches
+support grammars in some way but I think the Silver, JastAdd, and
+Kiama have just one notion for this.  Why 2 in Rascal?
+
+
+Scannerless parsers (SGLL in Rascal) and context aware scanning (in
+Copper/Silver) both solve the problem of modular lexical syntax.
+Copper's modular determinism lets one avoid ambiguities given
+restrictions on the grammars, SGLL has no restrictions but the
+possibility of ambiguities.
+
+
+Rascal has Box, Silver and Kiama implement a Swierstra's
+pretty-printing library.  They do similar things - we don't mention it
+in our section but will do so.
+
+
+Silver makes a type distinction between reference and higher order
+attributes~\cite{kaminski11sle} that is not made in JastAdd and
+Kiama.   While a "clone" method or function must be applied in JastAdd
+or Kiama because trees have just one type, in Silver there are
+"decorated" tree on inherited attributes have been assigned (and thus
+synthesized attributes can be demanded) and "undecorated" trees that
+have not yet had inherited attribute values provided to them.
+
+In Silver, the lifting process also does renaming to avoid clashes
+with C keywords.  This renaming is handled explicitly in the JastAdd
+generateC attribute equations.
+
+Errors in JastAdd attr equations are found by the Java compiler when
+the generated Java code is compiled.  Silver (presumably Rascal) finds
+semantic errors in its specs before generating Java code.   What about
+others? 
+
+Rascal: explicit control-flow - not implicit attribute evaluation.  Is
+it "less" declarative then?
+
+Silver collection attributes are not as general as JastAdds since
+reference attributes are "read only".  I believe Kiama does the same
+thing as JastAdd.  Thus a discussion on how these are implemented in a
+demand-driven way might be interesting.  For example, in the JastAdd
+specification, how are the contribution equations demanded by the
+errors attribute on Module?
+
+Rascal has side-effects.  Silver does not.  JastAdd discourages them,
+they are typically errors, but not statically forbidden.
+
+Attributes (Silver, JastAdd, Kiama) and annotations (Rascal) are
+similar things.  But in Rascal explicit passes over the AST are made.
+
+Desugaring in Rascal throws away the original tree.  Forwarding in
+Silver and Kiama (presumably) and delegation in JastAdd keeps the
+original tree.
+
+It seem that we have a few categories of approaches:
+1. The "whole-language" approach of Silver and Rascal in which the
+language specification is written in Silver or Rascal and that there
+is no "backdoor" to the underlying implementation language.  (Silver
+is translated to Java, but we don't write Java code inside a Silver
+specification.  Silver does allow this but it is but we use it only in
+a few special cases when we're looking to optimize Silver's
+implementation of lists.)
+
+2. JastAdd and Kiama expect users to write Java (or Scala) code for
+the "expression" parts of AG equations, but provide an AG
+specification language that is quite rich.  The implementations are
+different (pre-processor in JastAdd and Embedded DSL in Kiama) but
+they feel similar in this sense.
+
+3. The lightweight approaches of Simpl and Ocaml, much more of the
+language specification is written in Scala or Ocaml.
+
+There are other ways to organize things, however.  Kiama and Simpl
+both use Scala but the implementations are different: EDSL vs
+pre-processor.
+
+
+Questions:
+----------
+
+JastAdd: Figure 9. The body of Procedure.getDecl(int
+index).lookup(String name) makes sense, but it isn't clear to me how
+this is used.   What is getDecl doing?  Ok, now I see that this is
+indicating what child this inh attribute is being defined on.  What if
+a production has two children of the same non-terminal type - how are
+they referenced?
+
+JastAdd: It seems that an attribute declaration in JastAdd combines the
+declaration of the attribute and its type (as in Silver) with the
+specification of what nonterminal it occurs on.  Can these be
+separated? 
+
+JastAdd: On the contributions to the errors attribute on Module root
+node in Figure 11.  Module is a non-terminal, but how is it specified
+that there is only one of them - at the root.  I suppose this could be
+determined by examining the productions in the grammar - is this what
+is done?
+
+JastAdd: type is an inherited attribute on IdDecl (page 22).  But it
+is only used in some places, so do all parents of IdDecl define this -
+even in places where the child will likely not use it, such as in an
+expression?  Silver does the same thing.
+
+Rascal: are there exhaustiveness and overlapping pattern checks for
+pattern based dispatch?
+
+Rascal: maybe explain the angle-bracket syntax.
+
+Rascal: how does lifting in your specification handle nested functions
+that reference non-local, but non-global variables?
+
+Kiama: "non-standard regular expressions" - for nested comments.  I
+assume there are some counters or something in these that let you
+recognize languages that are not <regular>.  
+
+Kiama: does it make sense to use more standard AG / grammarware
+terminology in the discussion - for example at the bottom of page 42
+you mention "two cases: one for .."  I think it is clear that the two
+cases correspond to productions, but maybe making this explicit would
+be nice.  On page 43 you mention that a "constant entity holds a
+reference to the constant declaration" - is this a reference
+attribute?  I think so, why not say it?  This is a commonality between
+the AG approaches that we will want to mention in the introduction or
+conclusion somewhere.  This is something for everyone to consider (I'm
+just picking on Tony) - how closely do we keep to
+non-implementation-technique-specific jargon?
+
+Simpl: what is "enterprise setting"?  Simpl seems like nice
+lightweight approach, so some explanation of this domain would be
+interesting.
+
+Simpl: Some figures aren't checked into the Subversion repository.  
+
+Simpl: I am not sure of components in Simpl - what does the tool do
+versus what does one just write in Scala?  I think getting the figures
+will help with this.
+
+OCaml: I think some description of monad transformers is needed.  Some
+will know of these, but many won't.  These are the similar to what 
+Sheng Liang and Paul Hudak did in "Modular Denotational Semantics for
+Compiler Construction" in ESOP '96, correct?
+
+
+Thoughts about the introduction, observations, conclusions sections:
+... just ideas ...
+... beyond many of the comments above ...
+------------------------------------------------------------------
+
+Perhaps some discussion of the similarity between grammars, ADTs, OO
+embedding - maybe this saves the need to say so later in individual
+sections. 
+
+Maybe we want to allocate description of certain common things to
+specific tools: reference attributes in JastAdd, pretty-printing in
+Rascal, higher-order attributes in Silver ... or something similar.
+Would this improve the paper in that common ideas are explained once?
+
+Try to move figures onto the same page in which their content is
+discussed. 
+
+Should we have a standardized way to describe artifacts and how
+components contribute to them?
+
+We should extensively reference background material so that this
+paper may serve as an introduction to the ideas, but will have
+pointers so that people can dig deeper in to the tools, but also into
+the implementation techniques.
+
+
+
