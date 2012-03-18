@@ -391,7 +391,8 @@ of the C language. Next, Oberon0 AST was transformed to C AST. Because
 the more complicated Oberon0 constructs were previously simplified
 (see the previous subsection), the translation was quite straightforward.
 In the last step, the C AST was transformed to string using pretty-printing
-library included in Simpl.
+library included in Simpl (it is based on Philip Wadler's Haskell 
+library~\cite{wadler-prettyprinter}).
 
 Figure \ref{fig:code-generation} illustrates the code generation
 process with an example procedure for calculating factorial. Since
