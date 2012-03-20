@@ -2,9 +2,136 @@
 
 \cite{OcamlDef, PV, PVReuse, Exproblem, Remy, Monads, MonadicParserCombinators}
 
-\subsection{Introduction}
+\subsection{Type-driven Transformers}
+
+In this section we describe type-driven transformers of a certain kind which are 
+massively used in our implementation. Namely, all the tasks excluding parsing
+are expressed using solely the transformers of this kind. ``Type-driven'' means that
+the semantics of transformers is completely determined by the transforming type; 
+so all transformers can be constructed mechanically from the type definitions.
+The converse is also true --- the type-driven transformer unambigiously defines
+some type. We heavily utilize this property --- actually there are not a single 
+type definition in our implementation: all types are introduced implicitly 
+and inferred from the transformation functions. Another property of transformers
+is their extensibility: each transformer operates on a data of a partially-defined, 
+or \emph{open}, type. Then transformers for some types can be combined by a certain primitive
+to provide a transformer for the union type which still remains open and so can be
+combined later on. As a result we can construct a highly modular structure of
+transformers each of which implements some task on a certain trait of some general
+data structure. 
+
+To implement this kind of approach a certain support from a host language type 
+system is needed. Objective Caml provides such a support in particular by mean of 
+\emph{polymorphic variant} types~\cite{PV}. In short, polymorphic variant types allow to 
+share the same constructor between the different variant types with possibly different 
+types and numbers of arguments. Polymorphic variant type need not (but can) be explicitly
+declared. Another feature of polymorphic variant types is that they can be open --- in certain
+context only some of their constructors may be known.
+
+Polymorphic variants in Objective Caml can be used to express the ultimate solution
+for the \emph{expression problem}~\cite{Exproblem, PVReuse} --- that is, the problem of
+modular and type-safe implementation of extending data structure processing. 
+
+We illustrate the construct of type-driven extensible transformers by the canonical
+example --- expression evaluator. The idea is to implement evaluator as a
+collection of functions each of which evaluates only the limited subset of expression's
+nodes and then to combine them to construct the evaluator of the whole expression.
+
+First, consider the function which transforms only two expression nodes ---
+addition and subtraction\footnote{Polymorphic variant type constructors are lexically distinguished
+from the regular ones by the backquote as their first character.}:
+
+\begin{lstlisting}[language=ocaml]
+let rec evalAddSub ext expr =
+  let self = evalAddSub ext in
+  match expr with
+  | `Add (x, y) -> self x + self y
+  | `Sub (x, y) -> self x - self y
+  | z -> ext self z
+\end{lstlisting}
+
+Here \lstinline{ext} stands for the extension function --- that is, the function which
+transforms the rest of polymorphic variant type's constructors besides those transformed 
+by \lstinline{evalAddSub}. Note that since we want to transform potentially recursive 
+structures we have to provide extension function with it's own extension function which 
+should be able to transform the all nodes of expression, including \lstinline{`Add} and
+\lstinline{`Sub}. This extension function (``\lstinline{self}'') is acquired by partial
+application \lstinline{evalAddSub} to \lstinline{ext}.
+
+Now we can provide two additional functions for evaluating identifiers in some state 
+\lstinline{s} and multiplication:
+
+\begin{lstlisting}[language=ocaml]
+let rec evalIdent s ext expr =
+  let self = evalIdent s ext in
+  match expr with
+  | `Ident n -> s n
+  | z -> ext self z
+\end{lstlisting}
+
+\begin{lstlisting}[language=ocaml]
+let rec evalMult ext expr =
+  let self = evalMult ext in
+  match expr with
+  | `Mul (x, y) -> self x * self y
+  | z -> ext self z
+\end{lstlisting}
+
+Note that the semantics of these functions is almost completely type-driven; despite
+we do not have any type declaration here we actually think in terms of types, not
+in terms of implementation details. The only concrete implementation-dependent feature
+is the essense of constructor-specific transformation; we'll get rid of this specificity 
+later. Note also that these functions are completely independent; thus, they can be implemented 
+in a different compilation units or provided at arbitrary moments of program execution.
+
+Now we introduce the combinator which plays role of type sum:
+
+\begin{lstlisting}[language=ocaml]
+let (++) left right = 
+  fun ext s -> 
+    left (fun self z -> right (fun _ z -> ext self z) z) 
+         s
+\end{lstlisting}
+
+This combinators takes extensible transformers for some open types and provides extensible transformer 
+for the type of their sum. This is trivially achieved by providing appropriate extensions for each ``summands''.
+For example,
+
+\begin{lstlisting}[language=ocaml]
+let evalAddSubIdent s = evalIdent s ++ evalAddSub
+\end{lstlisting}
+
+is (an extensible) function which evaluates expressions with nodes \lstinline{`Add}, \lstinline{`Sub} and
+\lstinline{`Ident}. This function can further be combined
+
+\begin{lstlisting}[language=ocaml]
+let evalAddSubIdentMult s = evalAddSubIndent s ++ evalMult
+\end{lstlisting}
+
+et cetera.
+
+%let apply f x = f x
+
+%let evalAll s = evalIdent s ++ evalMult ++ evalAddSub 
+
+%let evalSimple s = evalAddSub ++ evalIdent s
+%let evalMult   s = evalSimple s ++ evalMult
+
+
 
 \subsection{Scanning and parsing}
+
+For scanning, parsing and pretty-printing we use parser- and printer-combinator
+library called Ostap\footnote{http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=513}. 
+
+
+
+
+\begin{lstlisting}
+
+\end{lstlisting}
+
+Besides parser-combinators Ostap contains a set of pretty-printer combinators, which 
 
 \subsection{Name analysis}
 
@@ -44,7 +171,7 @@ checking function, ``\lstinline{expr}'' --- to the gerenic expression checking f
 so actually we perform kind analysis by discriminating the cases already encoded in
 the AST data structure in a type-parametric manner. 
 
-Each expression checking function is itself aquired by applying the generic transformer 
+Each expression checking function is itself aquired by applying the type-driven transformer 
 for expressions to reference-checking routine of certain kind. For example, expression 
 name analysis for L1 is encoded in the following manner:
 
@@ -78,7 +205,7 @@ source-to-source transformation nor for the C generation; yet we still implement
 a generic form just to demonstrate the approach.
 
 The most work in the type-checking phase is done at the expression level. Since the 
-initial AST does not have any type information (and even doest not have any ``placeholders'' 
+initial AST does not have any type information (and even does not have any ``placeholders'' 
 for it) we map each expression into an isomorphic structure by \emph{pairing} each node 
 with the corresponding type. Note that this transformation does not preserve the type of
 the expression tree; it can not even be expressed by some parameterization of the
@@ -92,7 +219,7 @@ constants and identifiers; then the type-pairing transformation would have the t
 
 where \lstinline{typ} stands for the type-representing type; in the actual implementation
 we should also take care of the extensibility of the type-checkers. All type-pairing
-transformations are performed using per-type generic transformers.
+transformations are performed using type-driven transformers.
 
 Besides annotating the expression trees with the type information the type-checking 
 phase also performs the checking itself; due to the simplicity of the type system
@@ -224,7 +351,7 @@ Our lambda-lifting implementation is decomposed into the following passes:
 \begin{itemize}
 \item \emph{Inspection}. During this stage we traverse the AST of the program and for each procedure collect the 
 names of all called procedures and all used non-local variables. The most of the 
-traversal is performed using generic transformers with identity monad; the gathered information is 
+traversal is performed using type-driven transformers with identity monad; the gathered information is 
 collected in a mutable data structures. 
 
 \item \emph{Propagation}. On this stage we propagate the collected non-local usage information through the call
@@ -235,14 +362,14 @@ provided by the previous two stages. This rewriting involves changing the declar
 their call sites, replacing usages of non-local variables into usages of procedure arguments, passed by 
 reference, and introducing the type synonyms for the types of those local variables whose usages in 
 nested procedures resulted in passing them as parameters. Most of the work is again performed by
-generic transformers with identity monad.
+type-driven transformers with identity monad.
 \end{itemize}
 
 Note that we again heavily utilize the name disambiguation performed on the name resolution stage --- we do
 not need neither new names for the lifted procedure arguments nor the correspondence between newly introduced
 formal and actual parameters since we can simply use the same name for the formal and actual parameter.
 
-Despite the fact that application of generic monadic transformers simplified the implementation a lot the
+Despite the fact that application of type-driven monadic transformers simplified the implementation a lot the
 lambda-lifting is still the most cumbersome and hard-to-understand part of our compiler.
 
 As an observable result consider the following L5 program:
