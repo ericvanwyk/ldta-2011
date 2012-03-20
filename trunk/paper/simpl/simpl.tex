@@ -12,10 +12,14 @@ how a given task was solved using the tool.
 \subsection{Introduction}
 
 Simpl is a toolkit mainly targeted at implementing domain-specific
-languages (DSLs) in an enterprise setting. In particular, the goal
-is to be able to embed Simpl into a larger system. Freudenthal \cite{enterprise-dsl}
-analyzes the technical requirements for embeddable DSL tools and reviews
-existing DSL tools based on these requirements.
+languages (DSLs) in an enterprise setting. The aim is to use DSLs
+in systems that are built in a popular language (Java, C\#) using
+a framework that dictates the overall architecture of a system and
+where the DSL program is just one module in the large system. In particular,
+the ability to embed DSL programs and DSL implementations into a larger
+system is one of the main design goals of Simpl. For more thorough
+analysis of technical requirements for embeddable DSL tools and review
+of existing DSL tools based on these requirements, see Freudenthal~\cite{enterprise-dsl}.
 
 In order to be embeddable, a DSL toolkit should consist of two separate
 parts. One, {}``non-visual'' part contains the core of the DSL implementation:
@@ -57,18 +61,20 @@ Components with captions in italic are automatically generated.}
 \end{figure}
 
 
-Figure~\ref{fig:architecture} shows the main components of a DSL
-implementation created with Simpl. The first part is the non-visual
-language implementation that can be embedded into a bigger system.
-Development of a new DSL starts with grammar description that specifies
-both the context-free grammar of the DSL and the classes for representing
-the abstract syntax tree (AST) of a DSL program. The Simpl parser
-generator takes the grammar description as input and produces a parser
-and the AST classes. The (optional) program transformation component
-takes as input an AST and checks or transforms it. The code generator
-converts the preprocessed AST to text. The second part of the DSL
-implementation is the language IDE. It builds on Simpl IDE framework
-and the non-visual part of the language implementation.
+For the DSL developer, Simpl provides parser generator, libraries
+for pretty-printing and code generation, and an IDE framework. Figure~\ref{fig:architecture}
+shows the main components of a DSL implementation created with Simpl.
+The first part is the non-visual language implementation that can
+be embedded into a bigger system. Development of a new DSL starts
+with grammar description that specifies both the context-free grammar
+of the DSL and the classes for representing the abstract syntax tree
+(AST) of a DSL program. The Simpl parser generator takes the grammar
+description as input and produces a parser and the AST classes. The
+(optional) program transformation component takes as input an AST
+and checks or transforms it. The code generator converts the preprocessed
+AST to text. The second part of the DSL implementation is the language
+IDE. It builds on Simpl IDE framework and the non-visual part of the
+language implementation.
 
 
 \subsection{Scanning and Parsing}
@@ -391,7 +397,7 @@ of the C language. Next, Oberon0 AST was transformed to C AST. Because
 the more complicated Oberon0 constructs were previously simplified
 (see the previous subsection), the translation was quite straightforward.
 In the last step, the C AST was transformed to string using pretty-printing
-library included in Simpl (it is based on Philip Wadler's Haskell 
+library included in Simpl (it is based on Philip Wadler's Haskell
 library~\cite{wadler-prettyprinter}).
 
 Figure \ref{fig:code-generation} illustrates the code generation
