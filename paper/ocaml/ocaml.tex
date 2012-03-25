@@ -10,11 +10,11 @@ are expressed using solely the transformers of this kind. ``Type-driven'' means 
 the semantics of transformers is completely determined by the transforming type; 
 so all transformers can be constructed mechanically from the type definitions.
 The converse is also true --- the type-driven transformer unambigiously defines
-some type. We heavily utilize this property --- actually there are not a single 
+some type. We heavily utilize this property --- actually there is not a single 
 type definition in our implementation: all types are introduced implicitly 
 and inferred from the transformation functions. Another property of transformers
 is their extensibility: each transformer operates on a data of a partially-defined, 
-or \emph{open}, type. Then transformers for some types can be combined by a certain primitive
+or \emph{open}, type. Thus transformers for the some types can be combined by a certain primitive
 to provide a transformer for the union type which still remains open and so can be
 combined later on. As a result we can construct a highly modular structure of
 transformers each of which implements some task on a certain trait of some general
@@ -25,12 +25,11 @@ system is needed. Objective Caml provides such a support in particular by mean o
 \emph{polymorphic variant} types~\cite{PV}. In short, polymorphic variant types allow to 
 share the same constructor between the different variant types with possibly different 
 types and numbers of arguments. Polymorphic variant type need not (but can) be explicitly
-declared. Another feature of polymorphic variant types is that they can be open --- in certain
-context only some of their constructors may be known.
-
-Polymorphic variants in Objective Caml can be used to express the ultimate solution
-for the \emph{expression problem}~\cite{Exproblem, PVReuse} --- that is, the problem of
-modular and type-safe implementation of extending data structure processing. 
+declared. Another feature of polymorphic variant types is that they can be open --- in each
+context only some of their constructors may be known. Polymorphic variants in Objective Caml 
+can be used to express the solution for the \emph{expression problem}~\cite{Exproblem, PVReuse} --- 
+that is, the problem of modular and type-safe implementation of extending data structure 
+processing. 
 
 We illustrate the construct of type-driven extensible transformers by the canonical
 example --- expression evaluator. The idea is to implement evaluator as a
@@ -81,19 +80,18 @@ Note that the semantics of these functions is almost completely type-driven; des
 we do not have any type declaration here we actually think in terms of types, not
 in terms of implementation details. The only concrete implementation-dependent feature
 is the essense of constructor-specific transformation; we'll get rid of this specificity 
-later. Note also that these functions are completely independent; thus, they can be implemented 
-in a different compilation units or provided at arbitrary moments of program execution.
+later. Note also that these functions are completely independent of each other; thus, they 
+can be implemented in a different compilation units or provided at arbitrary moments of 
+program execution.
 
 Now we introduce the combinator which plays role of type sum:
 
 \begin{lstlisting}[language=ocaml]
-let (++) left right = 
-  fun ext s -> 
-    left (fun self z -> right (fun _ z -> ext self z) z) 
-         s
+let (++) left right = fun ext s -> 
+  left (fun self -> right (fun _ -> ext self)) s
 \end{lstlisting}
 
-This combinators takes extensible transformers for some open types and provides extensible transformer 
+This combinator takes extensible transformers for some open types and provides extensible transformer 
 for the type of their sum. This is trivially achieved by providing appropriate extensions for each ``summands''.
 For example,
 
@@ -102,22 +100,117 @@ let evalAddSubIdent s = evalIdent s ++ evalAddSub
 \end{lstlisting}
 
 is (an extensible) function which evaluates expressions with nodes \lstinline{`Add}, \lstinline{`Sub} and
-\lstinline{`Ident}. This function can further be combined
+\lstinline{`Ident}. This function can further be combined:
 
 \begin{lstlisting}[language=ocaml]
 let evalAddSubIdentMult s = evalAddSubIndent s ++ evalMult
 \end{lstlisting}
 
-et cetera.
+et cetera. 
 
-%let apply f x = f x
+When we need to actually apply these transformers to a data structure we have to provide
+some sort of ``ultimate'' extension function; it's easy to see that this function is just
+an application; in the following snippet
 
-%let evalAll s = evalIdent s ++ evalMult ++ evalAddSub 
+\begin{lstlisting}[language=ocaml]
+let apply f x = f x
 
-%let evalSimple s = evalAddSub ++ evalIdent s
-%let evalMult   s = evalSimple s ++ evalMult
+let x = 
+  evalAddSubIdent 
+     (function "a" -> 1 | "b" -> 2 | "c" -> 3 | "d" -> 4)
+     apply 
+     (`Add (
+        `Sub (`Ident "a", 
+              `Mul (`Ident "b", `Ident "c")
+        ), 
+        `Ident "d"
+      )
+     )
+\end{lstlisting}
 
+the name \lstinline{x} would be bound to \lstinline{-1}.
 
+In the previous examples we considered some concrete transformers --- evaluators.
+However a simple generalization would let us abstract this specificity away. Namely, 
+we preserve the overall control flow of the transformers but parameterize the
+actions carried out for each constructor. The generalized version of the first 
+transformer is presented below:
+
+\begin{lstlisting}[language=ocaml]
+let rec gmapAddSub t ext expr =
+  let self = gmapAddSub t ext in
+  match expr with
+  | `Add (x, y) -> t#add expr (self x) (self y)
+  | `Sub (x, y) -> t#sub expr (self x) (self y)
+  | z -> ext self z
+\end{lstlisting}
+
+Here \lstinline{t} stands for the constructor-wise transformer encoded
+as an \emph{object} with methods ``\lstinline{add}'' and ``\lstinline{sub}''.
+Each method takes the results of the same transformation applied to the
+direct counterparts of matched value and that value itself as arguments
+and returns the result of the transformation. Now the evaluation function
+can be expressed as
+
+\begin{lstlisting}[language=ocaml]
+let evalAddSub ext expr = 
+  gmapAddSub (object
+                method add _ x y = x + y
+                method sub _ x y = x - y
+              end) ext expr
+\end{lstlisting}
+
+The type system of Objective Caml allows objects to be implicitly typed: there is 
+no need to declare object types ``in advance''. Another feature of object
+types is that they can be polymorphic. This means that the definition of
+\lstinline{gmapAddSub} does not introduce any artificial type restrictions
+on a set of encoded transformations. For example, the copy transformation
+can be expressed using the same function but different object (of different but
+``compatible'' type):
+
+\begin{lstlisting}[language=ocaml]
+let copyAddSub ext expr =
+  gmapAddSb (object
+               method add _ x y = `Add (x, y)
+               method sub _ x y = `Sub (x, y)
+             end) ext expr
+\end{lstlisting}
+
+Since each concrete transformation can be expressed as a partial application of
+some generic \lstinline{gmap...} function to an object-encoded per-constructor
+transformation the implementation of typ-sum combinator can be left completely 
+unchanged. For example, expression evaluator for partially defined expression
+of addition, subtraction and identifiers can be implemented as
+
+\begin{lstlisting}[language=ocaml]
+let evalAddSubIdent s = 
+  gmapAddSub (object
+                method add _ x y = x + y
+                method sub _ x y = x - y
+              end) ++
+  gmapIdent (object method ident _ n = s n end)
+\end{lstlisting}
+
+In this approach we can easily construct transformations via combining and
+extending the predefined set of object-encoded per-type transformers; in 
+particular the following transformer generator was extensively used in the course
+of implementation (as always we show the version for \lstinline{`Add}-\lstinline{`Sub}
+type):
+
+\begin{lstlisting}
+let mapT f = object
+               method add e x y = f e (`Add (x, y))
+               method sub e x y = f e (`Sub (x, y))
+             end
+\end{lstlisting}
+
+The final generalization consists of ``lifting'' the transformation functions
+over some monad~\cite{Monads}. The implementation is straightforward so we omit it
+here; we note that the parameterization over a monad is implemented using Objective 
+Caml functors. In our implementation of Oberon0 we used three monads --- a variant 
+of exception monad called \lstinline{Checked}, identity monad \lstinline{Id} and list 
+monad \lstinline{List}. We refer to the monad-specific transformation functions for 
+the two former monads as \lstinline{cmap} and \lstinline{imap} respectively.
 
 \subsection{Scanning and parsing}
 
