@@ -7,7 +7,8 @@ case "$@" in
   -A2a) OPTIONS="-f -l 3 -r" ;;
   -A2b) OPTIONS="-f -l 2 -t" ;;
   -A3)  OPTIONS="-f -l 3 -t" ;;
-  -A4)  OPTIONS="-f -l 4 -c" 
+  -A4)  OPTIONS="-f -l 4 -c" ;;
+  -A5)  OPTIONS="-f -l 5 -c" 
 esac
 
 ## Run supertest.py with Ocaml implemenation of Oberon compiler
