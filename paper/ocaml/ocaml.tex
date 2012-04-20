@@ -212,19 +212,53 @@ of exception monad called \lstinline{Checked}, identity monad \lstinline{Id} and
 monad \lstinline{List}. We refer to the monad-specific transformation functions for 
 the two former monads as \lstinline{cmap} and \lstinline{imap} respectively.
 
-\subsection{Scanning and parsing}
+\subsection{Scanning, parsing and pretty-printing}
 
 For scanning, parsing and pretty-printing we use parser- and printer-combinator
 library called Ostap\footnote{http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=513}. 
 
-
-
+Ostap comprises of the set of regular monadic parser-combinators~\cite{MonadicParserCombinators} 
+and a syntax extension for Objective Caml which allows to bind syntax definitions in
+EBNF directly into compiler sources thus avioding parser generation phase. The syntax
+extension in turn is implemented using Camlp4/Camlp5 syntax extension 
+tool\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/}. Most parsers
+in our implementation are extensible by design; this extensibility is achieved
+via parameterization --- each extensible parser takes the extension parsers as
+a parameters. 
 
 \begin{lstlisting}
 
 \end{lstlisting}
 
-Besides parser-combinators Ostap contains a set of pretty-printer combinators, which 
+Besides parser-combinators Ostap contains a set of pretty-printer combinators, which are
+in fact a merely wrappers for the standard pretty-printing module \lstinline{Format}. To
+convert the original AST into printing functions using these combinators we again
+use type-driven transformers; for example, the expression pretty-printer looks like
+the following:
+
+\begin{lstlisting}[language=ocaml]
+let gprint ps ext expr =
+  let b x = hovboxed (listBySpaceBreak x) in
+  let op (s, p) = string s, p in
+  let w p' (x, p) = if p' < p then rboxed x else x in 
+  imap  
+    (object 
+       method binop _ o x y = 
+         let s, p = op (ps#binop o) in b [w p x; s; w p y], p
+       method unop  _ o x   = 
+         let s, p = op (ps#unop o) in b [s; w p x], p
+       method const _   x   = ps#const x
+     end
+    )
+    ext
+    expr
+\end{lstlisting}
+
+Note that apart from extensibility this pretty-printer is generalized in yet another 
+dimension --- namely, it is abstracted away from the concrete syntax. The \emph{ps}
+parameter designates \emph{printing scheme} which encapsulates the concrete
+syntax of arithmetic operators as well as their priorities. This allows to handle
+both pretty-printing and C generation.
 
 \subsection{Name analysis}
 
@@ -318,7 +352,6 @@ Besides annotating the expression trees with the type information the type-check
 phase also performs the checking itself; due to the simplicity of the type system
 this checking consists of merely comparisons between expected and actual types of expressions
 in a various syntactic contexts.
-
 
 \subsection{Source-to-source transformation}
 
@@ -531,7 +564,7 @@ There is no dedicated code generation pass in our implementation --- we consider
 as an alternative concrete syntax for the name-resolved (and lifted) AST. Pretty-printers for the relevant
 structures (simple expressions with L4 references, simple statements with procedure calls, 
 type-, variable- and procedure declarations) are implemented in a generic form: they take a
-\emph{printing scheme} which encapsulates the concrete syntax elements as an additional
+printing scheme which encapsulates the concrete syntax elements as an additional
 parameter. Note that we need a name-resolved tree to distinguish, for example, referenced-passed
 function parameters from value-passed ones in both function argument declaration list, all
 their usages within the function body and actual parameters of function invocation.
