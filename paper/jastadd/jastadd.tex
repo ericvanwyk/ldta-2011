@@ -276,7 +276,7 @@ The main characteristic of JastAdd is its declarative specification technique th
 In constructing the Oberon-0 compiler, we have reused a number of design ideas from earlier JastAdd compilers. These include:
 \begin{itemize}
   \item Synthesized reference attributes, typically called \texttt{decl}, and inherited parameterized attributes, typically called \texttt{lookup}, for name analysis.
-  \item Double dispatch for comparing types.
+  \item Parameterized attributes that use double dispatch (calling another attribute) for comparing types~\cite{ekman07oopsla}.
   \item Collection attributes for collecting compile-time error messages.
   \item Non-terminal attributes for representing predefined declarations.
   \item Non-terminal attributes for representing new language constructs in terms of existing ones, in order to simplify code generation.
@@ -296,6 +296,6 @@ However, when more complex accesses were added, like \texttt{ArrayElementAccess}
 \emph{Analysis of specifications.}
 JastAdd supports certain analysis of specifications: Static checks include checking that each attribute will have a defining equation for any possible AST. Dynamic checks include detection of cyclic evaluation (for attributes not declared as circular). We believe that the error messages are of reasonable quality. However, there is also room for improvement in several ways: The attribute equations are written in Java, and compile-time errors in them are not checked until compiling the generated Java code. While these errors are reasonably simple to map back to the equations in the JastAdd source code, it would have been better to get them directly in terms of that code. Furthermore, side effects are not allowed in the equations, but this is not checked, and may give rise to errors that are difficult to debug. This is something we would like to improve, for example by including an analysis similar to the the one proposed in the JPure system~\cite{pearce11cc}.
 
-\emph{Performance.} JastAddJ~\cite{ekman07oopsla}, the JastAdd Extensible Java compiler, has compilation times within a factor three of Javac. It can handle large programs of several 100K LOCs, but memory usage becomes a problem with millions of lines of code and could be improved. Overall, we believe that the performance of generated tools by JastAdd is adequate and of practical use. 
+\emph{Performance.} JastAdd gives compilers of reasonable performance, as exemplified by the JastAdd Extensible Java compiler that performs within a factor of three in comparison to the Java reference compiler javac~\cite{ekman07oopsla}. 
 
 To conclude, we think that the Oberon-0 implementation demonstrates well the language modularization capabilities of JastAdd, as well as many best practices for using the tool.
