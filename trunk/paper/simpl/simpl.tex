@@ -3,7 +3,7 @@
 
 \subsection{Note}
 
-In general, the following text assumes that the artifacts and tasks
+In general, the following text assumes that the artefacts and tasks
 (such as procedure lifting) are explained in the main part of the
 paper and that this section only needs to provide information about
 how a given task was solved using the tool.
@@ -22,9 +22,9 @@ analysis of technical requirements for embeddable DSL tools and review
 of existing DSL tools based on these requirements, see Freudenthal~\cite{enterprise-dsl}.
 
 In order to be embeddable, a DSL toolkit should consist of two separate
-parts. One, {}``non-visual'' part contains the core of the DSL implementation:
+parts. One, ``non-visual'' part contains the core of the DSL implementation:
 parser, program checker, code generator, etc. that can be embedded
-into a larger system. The other, {}``visual'' part contains (possibly
+into a larger system. The other, ``visual'' part contains (possibly
 integrated) environment for editing and managing DSL programs. Secondly,
 the non-visual part of the DSL implementation should not make any
 assumptions on how the system is implemented. In particular, the non-visual
@@ -49,7 +49,6 @@ choice is using Eclipse as the IDE platform -- if the DSL user wants
 to use IDE developed via Simpl, she must install Eclipse. In this
 case, we chose the most popular platform.
 
-%
 \begin{figure}[!h]
 \begin{centering}
 \includegraphics[width=0.7\columnwidth]{simpl/architecture.pdf}
@@ -57,7 +56,6 @@ case, we chose the most popular platform.
 
 \caption{\label{fig:architecture}Architecture of a DSL implemented with Simpl.
 Components with captions in italic are automatically generated.}
-
 \end{figure}
 
 
@@ -98,7 +96,6 @@ case statement. Using the same attribute name several times in a rule
 is allowed if the rule calls assigned to this attribute have compatible
 type.
 
-%
 \begin{figure}[!h]
 {\small }
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
@@ -118,11 +115,9 @@ CaseConstant: begin=SimpleExpr (".." end=SimpleExpr)?;
 
 \caption{\label{fig:case-statement}Grammar rules for parsing the Oberon0 \emph{CASE}
 statement.}
-
 \end{figure}
 
 
-%
 \begin{figure}[!h]
 {\small }
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
@@ -143,7 +138,6 @@ case class CaseConstant(
 
 \caption{\label{fig:Automatically-generated-AST}AST classes for expressing
 the Oberon0 \emph{CASE }statement.}
-
 \end{figure}
 
 
@@ -157,7 +151,6 @@ does not introduce additional wrapping of the AST nodes. The second
 rule makes all the unary expressions use a common AST class \emph{Unary(operation,~expression)}
 so that they can be uniformly treated in the processing code. 
 
-%
 \begin{figure}[!h]
 {\small }
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
@@ -172,7 +165,6 @@ NotExpr
 \caption{\label{fig:Using-return-expressions}Example rules using return expressions.
 Rule \emph{ParenExpr} does not wrap the inner AST node. Rule \emph{NotExpr}
 returns manually created AST class.}
-
 \end{figure}
 
 
@@ -189,7 +181,6 @@ values if this identifier evaluates to constant expression, and information
 whether the identifier is a by-ref procedure parameter. These attributes
 are filled out and used during name, type checking and code generation.
 
-%
 \begin{figure}[!h]
 {\small }
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
@@ -207,7 +198,6 @@ terminal Id {
 
 \caption{\label{fig:Adding-properties}Rule for parsing identifiers. The generated
 class \emph{Id} is amended by adding properties and methods to it.}
-
 \end{figure}
 
 
@@ -261,14 +251,16 @@ all the nested procedures. Figure \ref{fig:Program-before-lifting}
 shows an example Oberon0 program with the inner procedure highlighted.
 In the second step, all the nested procedures were lifted to top level.
 The new name was formed by concatenating names of outer and inner
-procedures. If the concatenation did not produce unique name, a number
-was added to the name. Figure \ref{fig:Program-during-lifting} shows
-the results of this step with the lifted procedure highlighted. Finally,
-the AST was scanned and all identifiers that referenced the lifted
-procedures were renamed to reflect the new names. Figure \ref{fig:Program-after-lifting}
-shows the end result with the renamed identifier highlighted.
+procedures. If the concatenation did not produce an unique name, a
+number was added to the name. Figure \ref{fig:Program-during-lifting}
+shows the results of this step with the lifted procedure highlighted.
+Finally, the AST was scanned and all identifiers that referenced the
+lifted procedures were renamed to reflect the new names. Since the
+name analysis links identifiers to concrete objects (procedures, variable
+definitions, etc.), renaming of the procedures leaves the reference
+information intact. Figure \ref{fig:Program-after-lifting} shows
+the end result with the renamed identifier highlighted.
 
-%
 \begin{figure}[!h]
 \begin{tabular}{>{\centering}p{0.33\textwidth}>{\centering}p{0.33\textwidth}>{\centering}p{0.33\textwidth}}
 {\scriptsize }
@@ -325,14 +317,13 @@ END Foo.
 \caption{Three stages of procedure lifting: locating nested procedures (a),
 lifting the procedures (b), and renaming the procedure references
 (c).}
-
 \end{figure}
 
 
 
 \subsubsection{\label{sub:Simplifying-CASE-Statements}Simplifying \emph{CASE} Statements}
 
-The Oberon0 \emph{CASE} statement is more powerful than \emph{switch}
+The Oberon0 \emph{CASE} statement is more powerful than the \emph{switch}
 statement in C programming language as it has support for ranges.
 In order to simplify code generation, we transformed Oberon0 \emph{CASE}
 statements to series of \emph{IF}-\emph{ELSE }statements (see Figure
@@ -343,7 +334,6 @@ we can optimize by not making the generated identifier \emph{gen\_1}
 a legal Oberon0 identifier. This way we do not have to ensure that
 it does not clash with any identifiers in this scope.
 
-%
 \begin{figure}[!h]
 \begin{tabular}{>{\centering}p{0.35\textwidth}>{\centering}p{0.55\textwidth}}
 {\footnotesize }
@@ -381,7 +371,6 @@ END;
 
 \caption{\emph{\label{fig:CASE-statement}Oberon0 CASE} statement before (a)
 and after transformation (b).}
-
 \end{figure}
 
 
@@ -410,10 +399,8 @@ and increment are statements, guard is an arbitrary expression). During
 the translation, all the identifiers are prefixed with underscore
 to prevent clashes with existing keywords.
 
-%
 \begin{figure}[!h]
 \begin{tabular}{>{\raggedright}p{0.48\textwidth}>{\centering}p{0.48\textwidth}}
-
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily},escapechar={\%}]
 PROCEDURE Fact(
     n: INTEGER;
@@ -444,7 +431,6 @@ ForStatement(
 
 
 (b) Oberon0 AST corrensponding to the highlighted \emph{FOR} statement.\tabularnewline
-
 \begin{lstlisting}[basicstyle={\footnotesize\ttfamily}]
 For(
  Assign(
@@ -494,7 +480,6 @@ void _Fact(int _n,int *_Res) {
 
 \caption{\label{fig:code-generation}Code generation example: translating the
 procedure from Oberon0 to C.}
-
 \end{figure}
 
 
@@ -526,17 +511,17 @@ transforming Oberon0 AST to C AST, and pretty-printing C AST;
 \item Other -- other supporting code, such as error handling, main functions,
 etc.
 \end{itemize}
-%
 \begin{table}[!h]
 \caption{\label{tab:loc-statistics}Code sizes for different artifacts and
 components. Sizes are expressed as non-blank, non-comment lines of
 code.}
 
 
-\noindent \centering{}\begin{tabular}{|c|r|r|r|r|r|r|r|r|}
+\noindent \centering{}%
+\begin{tabular}{|c|r|r|r|r|r|r|r|r|}
 \hline 
 Artifact/Component & Parse & Name & Type & Lift & Gen & Pretty & Other & \textbf{Total}\tabularnewline
-\hline
+\hline 
 \hline 
 A1 & 193 & 181 &  &  &  &  & 44 & \textbf{418}\tabularnewline
 \hline 
@@ -549,7 +534,7 @@ A3 &  &  & 92 &  &  &  & 17 & \textbf{109}\tabularnewline
 A4 & 48 & 44 & 89 & 72 & 463 & 198 & 39 & \textbf{953}\tabularnewline
 \hline 
 \textbf{Total} & \textbf{279} & \textbf{360} & \textbf{482} & \textbf{72} & \textbf{463} & \textbf{198} & \textbf{133} & \textbf{1987}\tabularnewline
-\hline
+\hline 
 \end{tabular}
 \end{table}
 
@@ -566,7 +551,6 @@ in overriding \emph{processStatement}, \emph{processExpr} etc. methods
 and adding new case clauses to process additional kinds of statements
 or expressions.
 
-%
 \begin{figure}[!h]
 \noindent \begin{centering}
 \includegraphics[scale=0.5]{simpl/artifacts.pdf}
@@ -574,7 +558,6 @@ or expressions.
 
 \caption{\label{fig:artifact-dependencies}Dependencies between artifacts in
 the Oberon0 implementation.}
-
 \end{figure}
 
 
@@ -588,12 +571,10 @@ encapsulated in a 33-line class that contained IDE services. The IDE
 code was based on the existing code checker (artifact A4) and did
 not involve references to Eclipse APIs. 
 
-%
 \begin{figure}[!h]
 \includegraphics[width=12cm]{simpl/ide-screenshot.png}
 
 \caption{\label{fig:Screenshot-of-Oberon0}Screenshot of Oberon0 IDE}
-
 \end{figure}
 
 
