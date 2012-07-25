@@ -1,6 +1,18 @@
 \section{Objective Caml}
 
-\cite{OcamlDef, PV, PVReuse, Exproblem, Remy, Monads, MonadicParserCombinators}
+Objective Caml or, in short, OCaml~\cite{OcamlDef, Remy} is a high-level programming language which 
+has been developed, distributed and supported by INRIA (Institut National de Recherche en 
+Informatique et en Automatique, France) since 1985. As a member of ML family this language 
+provides a number of well-known statically typed functional programming features such as
+first-class and high-order functions, parametric polymorphism and type inference. In addition
+OCaml consistently incorporates object-oriented traits --- objects and classes with 
+structural subtyping, rich module system with first-class modules and \emph{functors} (that is, 
+modules parameterized by other modules) which makes it a full-fledged multiparadigm programming
+language. In addition OCaml is equipped with syntax extension tool --- 
+Camlp4/Camlp5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allows to
+extend the host language with domain-specific constructs. We argue that in its present state OCaml 
+is already rich enough to be directly used as an implementation formalism for all the task listed 
+for the tool challenge. 
 
 \subsection{Type-driven Transformers}
 
@@ -14,19 +26,19 @@ some type. We heavily utilize this property --- actually there is not a single
 type definition in our implementation: all types are introduced implicitly 
 and inferred from the transformation functions. Another property of transformers
 is their extensibility: each transformer operates on a data of a partially-defined, 
-or \emph{open}, type. Thus transformers for the some types can be combined by a certain primitive
+or \emph{open}, type. Thus transformers for some types can be combined by a certain primitive
 to provide a transformer for the union type which still remains open and so can be
 combined later on. As a result we can construct a highly modular structure of
 transformers each of which implements some task on a certain trait of some general
 data structure. 
 
 To implement this kind of approach a certain support from a host language type 
-system is needed. Objective Caml provides such a support in particular by mean of 
+system is needed. OCaml provides such a support in particular by mean of 
 \emph{polymorphic variant} types~\cite{PV}. In short, polymorphic variant types allow to 
 share the same constructor between the different variant types with possibly different 
 types and numbers of arguments. Polymorphic variant type need not (but can) be explicitly
 declared. Another feature of polymorphic variant types is that they can be open --- in each
-context only some of their constructors may be known. Polymorphic variants in Objective Caml 
+context only some of their constructors may be known. Polymorphic variants in OCaml 
 can be used to express the solution for the \emph{expression problem}~\cite{Exproblem, PVReuse} --- 
 that is, the problem of modular and type-safe implementation of extending data structure 
 processing. 
@@ -109,7 +121,7 @@ let evalAddSubIdentMult s = evalAddSubIndent s ++ evalMult
 et cetera. 
 
 When we need to actually apply these transformers to a data structure we have to provide
-some sort of ``ultimate'' extension function; it's easy to see that this function is just
+some sort of ``ultimate'' extension function; it is easy to see that this function is just
 an application; in the following snippet
 
 \begin{lstlisting}[language=ocaml]
@@ -160,7 +172,7 @@ let evalAddSub ext expr =
               end) ext expr
 \end{lstlisting}
 
-The type system of Objective Caml allows objects to be implicitly typed: there is 
+The type system of OCaml allows objects to be implicitly typed: there is 
 no need to declare object types ``in advance''. Another feature of object
 types is that they can be polymorphic. This means that the definition of
 \lstinline{gmapAddSub} does not introduce any artificial type restrictions
@@ -170,7 +182,7 @@ can be expressed using the same function but different object (of different but
 
 \begin{lstlisting}[language=ocaml]
 let copyAddSub ext expr =
-  gmapAddSb (object
+  gmapAddSub (object
                method add _ x y = `Add (x, y)
                method sub _ x y = `Sub (x, y)
              end) ext expr
@@ -178,8 +190,8 @@ let copyAddSub ext expr =
 
 Since each concrete transformation can be expressed as a partial application of
 some generic \lstinline{gmap...} function to an object-encoded per-constructor
-transformation the implementation of typ-sum combinator can be left completely 
-unchanged. For example, expression evaluator for partially defined expression
+transformation the implementation of the typ-sum combinator can be left completely 
+unchanged. For example, the expression evaluator for partially defined expression
 of addition, subtraction and identifiers can be implemented as
 
 \begin{lstlisting}[language=ocaml]
@@ -194,7 +206,7 @@ let evalAddSubIdent s =
 In this approach we can easily construct transformations via combining and
 extending the predefined set of object-encoded per-type transformers; in 
 particular the following transformer generator was extensively used in the course
-of implementation (as always we show the version for \lstinline{`Add}-\lstinline{`Sub}
+of the implementation (as always we show the version for \lstinline{`Add}-\lstinline{`Sub}
 type):
 
 \begin{lstlisting}
@@ -206,32 +218,86 @@ let mapT f = object
 
 The final generalization consists of ``lifting'' the transformation functions
 over some monad~\cite{Monads}. The implementation is straightforward so we omit it
-here; we note that the parameterization over a monad is implemented using Objective 
-Caml functors. In our implementation of Oberon0 we used three monads --- a variant 
+here; we note that the parameterization over a monad is implemented using OCaml functors. 
+In our implementation of Oberon0 we used three monads --- a variant 
 of exception monad called \lstinline{Checked}, identity monad \lstinline{Id} and list 
 monad \lstinline{List}. We refer to the monad-specific transformation functions for 
 the two former monads as \lstinline{cmap} and \lstinline{imap} respectively.
 
 \subsection{Scanning, parsing and pretty-printing}
 
-For scanning, parsing and pretty-printing we use parser- and printer-combinator
+For scanning, parsing and pretty-printing we use the parser- and printer-combinator
 library called Ostap\footnote{http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=513}. 
 
 Ostap comprises of the set of regular monadic parser-combinators~\cite{MonadicParserCombinators} 
-and a syntax extension for Objective Caml which allows to bind syntax definitions in
-EBNF directly into compiler sources thus avioding parser generation phase. The syntax
+and a syntax extension for OCaml which allows to bind syntax definitions in
+EBNF directly into compiler sources thus avoiding parser generation phase. The syntax
 extension in turn is implemented using Camlp4/Camlp5 syntax extension 
-tool\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/}. Most parsers
-in our implementation are extensible by design; this extensibility is achieved
-via parameterization --- each extensible parser takes the extension parsers as
-a parameters. 
+tool. 
 
-\begin{lstlisting}
+As example consider the parser definition for simple statements of L1:
 
+\begin{lstlisting}[language=ocaml]
+ostap (
+  parse[ref][expr][stmt]: 
+    assignment[ref][expr] 
+  | ifStatement[expr][stmt] 
+  | whileStatement[expr][stmt];
+  assignment[ref][expr]: dst:ref ":=" src:expr {`Assign (dst, src)};
+  ifStatement[expr][stmt]: 
+    key["IF"] cond:expr 
+       key["THEN"] thenPart:oseq[stmt]
+       branches:(-key["ELSIF"] expr -key["THEN"] oseq[stmt])*
+       elsePart:(-key["ELSE"] oseq[stmt])?
+    key["END"] {
+    `If ((cond, thenPart)::branches, listify elsePart)
+  };
+  whileStatement[expr][stmt]: 
+    key["WHILE"] cond:expr key["DO"] stmts:oseq[stmt] key["END"] {
+    `While (cond, stmts)
+  }
+)
 \end{lstlisting}
 
+The parser is implemented in a high-order form --- it takes as arguments a parsers
+for references, expressions and statements as well. The structure of rules
+repeats that of regular EBNF. We use here some predefined combinators --- \lstinline{key} 
+and \lstinline{oseq} --- which are defined in a separate module. \lstinline{key} recognizes
+its string argument making sure that the next symbol is a word delimiter while \lstinline{oseq}
+parses a possibly empty semicolon-delimited items specified by its argument. Note that 
+parameterization by statement parser \lstinline{stmt} makes the whole parser \emph{open} ---
+it parses wider language than merely assing-if-while with assign-if-whiles as substatements.
+
+The definition of parser becomes closed at the client level; for example, L1-statements
+parsed with the following parser:
+
+\begin{lstlisting}[language=ocaml]
+statement: !(SimpleStatement.parse)[reference][expression][statement];
+\end{lstlisting}
+
+Here \lstinline{!(...)} used to bind arbitrary OCaml expression into EBNF rule (we use it
+to call parser \lstinline{parse} from module \lstinline{SimpleStatement}), \lstinline{reference} and
+\lstinline{expression} designate the parsers for L1 references and expressions respectively.
+
+Similarly, we can easily combine different parameterized parsers to obtain parsers for more
+complex constructs. For example, extended statements of L2 are parsed with the following
+definition:
+
+\begin{lstlisting}[language=ocaml]
+statement[ref][cexpr][expr][stmt]: 
+  !(SimpleStatement.parse)[ref][expr][stmt]
+| !(ExtendedStatement.parse)[ref][cexpr][expr][stmt];
+stmt: statement[reference][expression][expression][stmt];
+\end{lstlisting}
+
+Here we combine parser for simple statements with parser for extended statements (``CASE'' and ``FOR'')
+into the one. Note the lack of semantic actions --- there are completely defined in corresponding
+parsers. Note also that the types of syntax trees, provided by these two combined parsers are completely 
+independent on each other. At the top level these types are combined by the compiler; this implementation 
+is completely type-safe.
+
 Besides parser-combinators Ostap contains a set of pretty-printer combinators, which are
-in fact a merely wrappers for the standard pretty-printing module \lstinline{Format}. To
+in fact merely wrappers for the standard pretty-printing module \lstinline{Format}. To
 convert the original AST into printing functions using these combinators we again
 use type-driven transformers; for example, the expression pretty-printer looks like
 the following:
@@ -266,9 +332,9 @@ The name analysis in our implementation in fact performs the following tasks:
 
 \begin{itemize}
 \item \emph{Kind analysis} --- the verification of proper usage of each name for each context this
-name appears in. For example, the left side of an assignment should designate variable or procedure argument,
+name appears in. For example, the left side of an assignment should designate a variable or procedure argument,
 all references in a constant expression should designate constants etc.
-\item \emph{Constant evaluation} --- the replacement of each constant expression with
+\item \emph{Constant evaluation} --- the replacement of each constant expression by
 its value;
 \item \emph{Proper name analysis} --- establishing the relation between the usage of
 named entity and its declaration;
@@ -299,7 +365,7 @@ so actually we perform kind analysis by discriminating the cases already encoded
 the AST data structure in a type-parametric manner. 
 
 Each expression checking function is itself aquired by applying the type-driven transformer 
-for expressions to reference-checking routine of certain kind. For example, expression 
+for expressions to a reference-checking routine of a certain kind. For example, the expression 
 name analysis for L1 is encoded in the following manner:
 
 \begin{lstlisting}[language=ocaml]
@@ -319,8 +385,8 @@ extension is provided later in the extended languges to handle the references of
 
 Name analysis converts the initially parsed AST into the structure of incompatible 
 type. From one hand this approach enforces the safety of the compiler since, for example, an attempt
-to typecheck unresolved program will not pass the typechecker; on the other hand this
-safety has its' cost --- for example, a separate pretty-printer is required for a
+to typecheck an unresolved program will not pass the typechecker; on the other hand this
+safety has its cost --- for example, a separate pretty-printer is required for a
 name-resolved tree. 
 
 \subsection{Type checking}
@@ -361,7 +427,7 @@ the name-resolved AST so it subsequently can be typechecked or undergo further
 transformations. Note that this approach simplifies the implementation a lot since all name 
 disambiguation is performed on the name resolution stage.
 
-Since sometimes we need a new names to be generated (for example for capturing the upper bounds of
+Since sometimes we need new names to be generated (for example for capturing the upper bounds of
 FOR statements during lowering) we also provide the name generation helper which is constructed
 on the name resolution stage and then is passed to the transformation functions as a parameter.
 
@@ -404,13 +470,13 @@ nontrivial work is done by methods ``\lstinline{case}'' and
 called when the corresponding construct is encountered in the tree.
 
 Method ``\lstinline{case}'' takes the original AST node for the CASE statement 
-(which actually never used for the lowering, hence the wildcard symbol ``\lstinline{_}'' 
+(which actually is never used for the lowering, hence the wildcard symbol ``\lstinline{_}'' 
 as a parameter placeholder), and its immediate subtrees --- key expression ``\lstinline{e}'',
 list of conditional branches ``\lstinline{b}'' and the else branch ``\lstinline{s}'' --- and transforms it 
 into the compound \mbox{IF-THEN-ELSIF-...-END} statement with the key value captured into the fresh variable.
 Method ``\lstinline{forc}'' operates in a similar manner.
 
-During lowering we sometimes need to construct a new fragments of AST; we facilitate this task
+During lowering we sometimes need to construct new fragments of AST; we facilitate this task
 with the help of \emph{quotations}. A quotation is just a parser which converts a parameterized 
 string into a fragment of AST. For our needs the following definition of quotation parsers turned out 
 to be sufficient:
@@ -442,9 +508,9 @@ AST with its node constructors. Here ``\lstinline{qe}'' is just a wrapper for th
 defined in the former code snippet which additionally takes a quotation context represented by an associative 
 list.
 
-Note that the quotation functionality is implemented in a completely independent manner to the ``main'' parsers ---
+Note that the quotation functionality is implemented in a completely independent manner of the ``main'' parsers ---
 none of them are aware of quotation definitions which are kept completely local to the lowering function. Note also
-that quotation parsing provides already name-resolved AST since all quotation arguments are substituted with 
+that quotation parsing provides already a name-resolved AST since all quotation arguments are substituted with 
 the name-resolved subtrees.
 
 \subsubsection{Type lifting}
@@ -478,7 +544,7 @@ Our lambda-lifting implementation is decomposed into the following passes:
 \item \emph{Inspection}. During this stage we traverse the AST of the program and for each procedure collect the 
 names of all called procedures and all used non-local variables. The most of the 
 traversal is performed using type-driven transformers with identity monad; the gathered information is 
-collected in a mutable data structures. 
+collected in a mutable data structure. 
 
 \item \emph{Propagation}. On this stage we propagate the collected non-local usage information through the call
 graph represented by the mapping between the caller and callees. This pass is handcoded.
@@ -495,7 +561,7 @@ Note that we again heavily utilize the name disambiguation performed on the name
 not need neither new names for the lifted procedure arguments nor the correspondence between newly introduced
 formal and actual parameters since we can simply use the same name for the formal and actual parameter.
 
-Despite the fact that application of type-driven monadic transformers simplified the implementation a lot the
+Despite the fact that the application of type-driven monadic transformers simplified the implementation a lot the
 lambda-lifting is still the most cumbersome and hard-to-understand part of our compiler.
 
 As an observable result consider the following L5 program:
@@ -531,30 +597,30 @@ As a result the following L4-code in produced:
 MODULE L;
   TYPE
     typename = ARRAY 10 OF INTEGER;
-  PROCEDURE global_top_T_Init 
-  (VAR global_top_T_a : typename; 
-   VAR global_top_T_i : INTEGER);
+  PROCEDURE globaltopTInit 
+  (VAR globaltopTa : typename; 
+   VAR globaltopTi : INTEGER);
   VAR
     upb : INTEGER;
   BEGIN
-    global_top_T_i := 1; 
+    globaltopTi := 1; 
     upb := 10; 
-    WHILE (1 > 0) & (global_top_T_i <= upb) OR 
-          (1 <= 0) & (global_top_T_i >= upb)
+    WHILE (1 > 0) & (globaltopTi <= upb) OR 
+          (1 <= 0) & (globaltopTi >= upb)
       DO
-        global_top_T_a[global_top_T_i] := global_top_T_i; 
-        global_top_T_i := global_top_T_i + 1
+        globaltopTa[globaltopTi] := globaltopTi; 
+        globaltopTi := globaltopTi + 1
       END
-  END global_top_T_Init;
-  PROCEDURE global_top_T ();
+  END globaltopTInit;
+  PROCEDURE globaltopT ();
   VAR
-    global_top_T_i : INTEGER;
-    global_top_T_a : typename;
+    globaltopTi : INTEGER;
+    globaltopTa : typename;
   BEGIN
-    global_top_T_Init (global_top_T_a, global_top_T_i)
-  END global_top_T;
+    globaltopTInit (globaltopTa, globaltopTi)
+  END globaltopT;
   BEGIN
-    global_top_T ()
+    globaltopT ()
 END L.
 \end{lstlisting}
 
