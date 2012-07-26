@@ -9,21 +9,27 @@ OCaml consistently incorporates object-oriented traits --- objects and classes w
 structural subtyping, rich module system with first-class modules and \emph{functors} (that is, 
 modules parameterized by other modules) which makes it a full-fledged multiparadigm programming
 language. In addition OCaml is equipped with syntax extension tool --- 
-Camlp4/Camlp5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allows to
-extend the host language with domain-specific constructs. We argue that in its present state OCaml 
-is already rich enough to be directly used as an implementation formalism for all the task listed 
-for the tool challenge. 
+CamlP4\footnote{http://brion.inria.fr/gallium/index.php/Camlp4}/CamlP5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allows to extend the host language with domain-specific constructs. 
+
+We argue that in its present state OCaml is already rich enough to be directly used as an 
+implementation formalism for all the task listed for the tool challenge. Apart from parsing and 
+pretty-printing which can easily be handled in a standard way using parser- and printer combinators 
+the other tasks are rather simple transformations of abstract syntax trees. The main consideration
+for the OCaml implementation was to utilize \emph{type-driven transformers} to express all these
+transformations. As we deal with the extending family of languages we have to resort to extensible
+data structures and, respectively, extensible type-driven transformers. As we will see in the next 
+section, all these notions can nicely be implemented in pure OCaml. 
 
 \subsection{Type-driven Transformers}
 
 In this section we describe type-driven transformers of a certain kind which are 
-massively used in our implementation. Namely, all the tasks excluding parsing
+massively used in OCaml implementation. Namely, all the tasks excluding parsing
 are expressed using solely the transformers of this kind. ``Type-driven'' means that
 the semantics of transformers is completely determined by the transforming type; 
 so all transformers can be constructed mechanically from the type definitions.
 The converse is also true --- the type-driven transformer unambigiously defines
 some type. We heavily utilize this property --- actually there is not a single 
-type definition in our implementation: all types are introduced implicitly 
+type definition in the implementation: all types are introduced implicitly 
 and inferred from the transformation functions. Another property of transformers
 is their extensibility: each transformer operates on a data of a partially-defined, 
 or \emph{open}, type. Thus transformers for some types can be combined by a certain primitive
@@ -219,7 +225,7 @@ let mapT f = object
 The final generalization consists of ``lifting'' the transformation functions
 over some monad~\cite{Monads}. The implementation is straightforward so we omit it
 here; we note that the parameterization over a monad is implemented using OCaml functors. 
-In our implementation of Oberon0 we used three monads --- a variant 
+In this implementation of Oberon0 we used three monads --- a variant 
 of exception monad called \lstinline{Checked}, identity monad \lstinline{Id} and list 
 monad \lstinline{List}. We refer to the monad-specific transformation functions for 
 the two former monads as \lstinline{cmap} and \lstinline{imap} respectively.
@@ -328,7 +334,7 @@ both pretty-printing and C generation.
 
 \subsection{Name analysis}
 
-The name analysis in our implementation in fact performs the following tasks:
+The name analysis in OCaml implementation in fact performs the following tasks:
 
 \begin{itemize}
 \item \emph{Kind analysis} --- the verification of proper usage of each name for each context this
@@ -391,7 +397,7 @@ name-resolved tree.
 
 \subsection{Type checking}
 
-The type checking in our implementation follows the common scheme: we map the name-resolved
+The type checking in OCaml implementation follows the common scheme: we map the name-resolved
 AST of the program into its type-annotated counterpart. This transformation is
 actually superfluous for Oberon-0 since we do not need type information neither for
 source-to-source transformation nor for the C generation; yet we still implemented it in
@@ -522,7 +528,7 @@ already disambiguated.
 
 \subsubsection{Procedure lifting}
 
-Procedure lifting in our implementation comprises two transformations:
+Procedure lifting in OCaml implementation comprises two transformations:
 
 \begin{itemize}
 \item \emph{Elementary procedure lifting} which moves nested procedures to the top level. This transformation, 
@@ -538,7 +544,7 @@ While elementary lifting is used to project L4 into itself prior to C generation
 projects L5 into the some language which is actually a superset of L4 (since even after the lambda-lifting 
 the program can still violate some L4 visibility rules for procedure declarations). 
 
-Our lambda-lifting implementation is decomposed into the following passes:
+The lambda-lifting implementation is decomposed into the following passes:
 
 \begin{itemize}
 \item \emph{Inspection}. During this stage we traverse the AST of the program and for each procedure collect the 
@@ -562,7 +568,7 @@ not need neither new names for the lifted procedure arguments nor the correspond
 formal and actual parameters since we can simply use the same name for the formal and actual parameter.
 
 Despite the fact that the application of type-driven monadic transformers simplified the implementation a lot the
-lambda-lifting is still the most cumbersome and hard-to-understand part of our compiler.
+lambda-lifting is still the most cumbersome and hard-to-understand part of the compiler.
 
 As an observable result consider the following L5 program:
 
@@ -626,7 +632,7 @@ END L.
 
 \subsection{Code generation}
 
-There is no dedicated code generation pass in our implementation --- we consider C representation
+There is no dedicated code generation pass in OCaml implementation --- we consider C representation
 as an alternative concrete syntax for the name-resolved (and lifted) AST. Pretty-printers for the relevant
 structures (simple expressions with L4 references, simple statements with procedure calls, 
 type-, variable- and procedure declarations) are implemented in a generic form: they take a
