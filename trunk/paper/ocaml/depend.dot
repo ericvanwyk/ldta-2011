@@ -1,0 +1,72 @@
+digraph X {
+
+  rankdir=BT;
+  ranksep=1.5;
+/*  nodesep=.85;
+*/
+  node [shape=box];
+
+  VarDecl;
+  TypeDecl;
+  ConstDecl;
+  PrimitiveType;
+  SimpleStatement;
+  SimpleExpression;
+  Module;
+  ProcDecl;
+  CompositeType;
+  ExtendedStatement;
+
+  node [shape=circle];
+
+  L1;
+  L2;
+  L3;
+  L4;
+  L5;
+ 
+  edge [weight=2, color=black, arrowhead=open, penwidth=2];
+ 
+  VarDecl -> L1;
+  TypeDecl -> L1;
+  ConstDecl -> L1;
+  SimpleStatement -> L1;
+  SimpleExpression -> L1;
+  PrimitiveType -> L1;
+  Module -> L1;
+  ExtendedStatement -> L2;
+  L1 -> L2;
+  ProcDecl -> L3;
+  CompositeType -> L4;
+  L3 -> L4;
+  L4 -> L5; 
+  L2 -> L3;
+
+  edge [weight=1, color=gray, arrowhead=open, penwidth=1];
+
+ SimpleStatement -> L2; 
+
+ SimpleExpression -> L2;
+ PrimitiveType -> L2;
+ Module -> L2;
+ SimpleExpression -> L3;
+ PrimitiveType -> L3;
+ Module -> L3;
+
+ L1 -> L3;
+ VarDecl -> L4;
+ TypeDecl -> L4;
+ SimpleStatement -> L4;
+ SimpleExpression -> L4;
+ ProcDecl -> L4;
+ PrimitiveType -> L4;
+ Module -> L4;
+ ExtendedStatement -> L4;
+ L2 -> L4;
+ L1 -> L4;
+ SimpleStatement -> L5;
+ SimpleExpression -> L5;
+ ExtendedStatement -> L5;
+ L1 -> L5;
+ L3 -> L5;
+}
