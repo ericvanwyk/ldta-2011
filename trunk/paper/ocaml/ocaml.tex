@@ -4,7 +4,7 @@ Objective Caml or, in short, OCaml~\cite{OcamlDef, Remy} is a high-level program
 has been developed, distributed and supported by INRIA (Institut National de Recherche en 
 Informatique et en Automatique, France) since 1985. As a member of ML family this language 
 provides a number of well-known statically typed functional programming features such as
-first-class and high-order functions, parametric polymorphism and type inference. In addition
+first-class high-order functions, parametric polymorphism and type inference. In addition
 OCaml consistently incorporates object-oriented traits --- objects and classes with 
 structural subtyping, rich module system with first-class modules and \emph{functors} (that is, 
 modules parameterized by other modules) which makes it a full-fledged multiparadigm programming
@@ -12,21 +12,38 @@ language. In addition OCaml is equipped with syntax extension tool ---
 CamlP4\footnote{http://brion.inria.fr/gallium/index.php/Camlp4}/CamlP5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allows to extend the host language with domain-specific constructs. 
 
 We argue that in its present state OCaml is already rich enough to be directly used as an 
-implementation formalism for all the task listed for the tool challenge. Apart from parsing and 
+implementation formalism for all the tasks listed for the tool challenge. Apart from parsing and 
 pretty-printing which can easily be handled in a standard way using parser- and printer combinators 
 the other tasks are rather simple transformations of abstract syntax trees. The main consideration
 for the OCaml implementation was to utilize \emph{type-driven transformers} to express all these
 transformations. As we deal with the extending family of languages we have to resort to extensible
 data structures and, respectively, extensible type-driven transformers. As we will see in the next 
-section, all these notions can nicely be implemented in pure OCaml. 
+section, all these notions can nicely be implemented in the pure OCaml. 
 
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
 \includegraphics[height=13cm, width=14cm]{ocaml/depend.pdf}
 \end{center}
-\label{ocamlmoddep}
 \caption{OCaml Implementation Module Dependencies}
+\label{ocamlmoddep}
 \end{figure}
+
+The module-wise structure of OCaml implementation is shown on Figure~\ref{ocamlmoddep}. This diagram
+was converted from the actual \verb|Makefile| dependency include; some auxiliary utility modules were
+omitted. Square-shaped nodes designate language components while circle-shaped stand for the 
+language toplevels. Black edges emphasize a transitive reduction of module dependency relation which corresponds 
+to the inter-language dependency. Each language component provides the parametrized solutions for all
+tasks of the challenge for the certain syntactic category. Most of them are expressed in terms of
+type-driven transformers. The parametrization allows to reuse the same functionality in a various
+concrete contexts --- for example, module \verb|VarDecl| implements \emph{generic} variable declaration
+construct parametrized by a type representation; this implementation provides parser, pretty-printer, name resolver,
+typechecker etc., each of which are in turn parametrized by the respective functionality for type representation.
+As a result the same separately compiled code is used to implement variable declarations in languages
+L1-L3 (where only base types are allowed) as well as in L4-L5 (where composite types are added). This approach
+allows to combine language implementations from precompiled reusable components as long as we deal with the extending
+family of languages. For example, the implementation of L2 was build ``on top'' of L1 by reusing existing modules 
+including L1 toplevel.
+
 
 \subsection{Type-driven Transformers}
 
@@ -246,7 +263,7 @@ library called Ostap\footnote{http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=5
 Ostap comprises of the set of regular monadic parser-combinators~\cite{MonadicParserCombinators} 
 and a syntax extension for OCaml which allows to bind syntax definitions in
 EBNF directly into compiler sources thus avoiding parser generation phase. The syntax
-extension in turn is implemented using Camlp4/Camlp5 syntax extension 
+extension in turn is implemented using CamlP4/CamlP5 syntax extension 
 tool. 
 
 As example consider the parser definition for simple statements of L1:
