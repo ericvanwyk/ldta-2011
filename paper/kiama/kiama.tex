@@ -33,11 +33,13 @@ Typically, each component is a separate Scala trait.
 We use the mixin facilities of Scala to assemble components into language implementations~\cite[chapter 12]{Odersky10d}.
 Thus, Kiama-based programs are extremely modular but this modularity does not impact the language processing DSLs.
 
-Sections~\ref{sec:kiama-scanparse} to \ref{sec:kiama-codegen} describe how the individual components of the Oberon-0 compiler were written.
-Section~\ref{sec:kiama-artifacts} describes the overall structure of the Kiama Oberon-0 implementation, including how the components relate to each other and are combined to make the challenge artifacts.
-Section~\ref{sec:kiama-observe} steps back from the detail to make some observations about the strengths and weaknesses of the Kiama approach.
+Sections~\ref{sec:kiama-scanparse} to \ref{sec:kiama-codegen} describe in more detail how the individual components of the Kiama Oberon-0 compiler are written.
+Section~\ref{sec:kiama-artifacts} describes the overall structure of the Kiama Oberon-0 implementation, including how the components relate to each other and how they are combined to make the challenge artifacts.
+Section~\ref{sec:kiama-observe} steps back from the detail to make some conclusions about the strengths and weaknesses of the Kiama approach.
 
-% FIXME: need to mention that code fragments are somewhat simplified?  Eg no positioned in the parser
+In some cases the code has been slightly simplified to make presentation simpler.
+For example, where the compiler uses lazy values to avoid issues with initialisation order, we use plain values here since initialisation is a minor issue that is irrelevant to the main topic of the paper.
+The complete code of the version described can be found as an example in the Kiama 1.3.0 distribution.
 
 \subsection{Scanning and parsing}
 \label{sec:kiama-scanparse}
@@ -50,16 +52,16 @@ For example, instances can be created without the \verb|new| keyword and their c
 We will see examples when we discuss the AST processing phases in subsequent sections.
 For now, here is the fragment of the AST definition that defines assignment statements and some forms of expression.
 
-\begin{verbatim}
-abstract class Statement extends SourceASTNode
-case class Assignment (desig : Expression, exp : Expression)
-  extends Statement
-
-abstract class Expression extends SourceASTNode
-case class IntExp (v : Int) extends Expression
-case class AddExp (left : Expression, right : Expression)
-  extends Expression
-\end{verbatim}
+\begin{scala}
+  abstract class Statement extends SourceASTNode
+  case class Assignment (desig : Expression, exp : Expression)
+    extends Statement
+  
+  abstract class Expression extends SourceASTNode
+  case class IntExp (v : Int) extends Expression
+  case class AddExp (left : Expression, right : Expression)
+    extends Expression
+\end{scala}
 
 The versions of the Oberon-0 compiler that output C code first construct an AST to represent that code.
 We use the term \emph{source AST} to refer to the AST of the Oberon-0 source program and \emph{target AST} to refer to the AST of the C target program.
@@ -71,39 +73,39 @@ Complex parsers can be constructed from basic ones in a style that mimics contex
 The correspondence is very close, including the ability to use left-recursion~\cite{Warth08}.
 The parser for an assignment statement shows a typical use of the main combinators.
 
-\begin{verbatim}
-val assignment = (lhs ~ (":=" ~> expression)) ^^ Assignment
-\end{verbatim}
+\begin{scala}
+  val assignment = (lhs ~ (":=" ~> expression)) ^^ Assignment
+\end{scala}
 
 \noindent
 where \verb|lhs| and \verb|expression| are parsers defined elsewhere.
 A literal string is converted implicitly into a parser that just accepts that string.
-The \verb|~| operator sequences two parsers to make a parser that returns a pair of the values of its operands.
+The \textscala{\~} operator sequences two parsers to make a parser that returns a pair of the values of its operands.
 The \verb|~>| operator also sequences, but throws away the value of its left operand.
 The \verb|^^| operator transforms the result of a parser using an arbitrary function.
-In the example the \verb|Assignment| constructor is used to build an AST node.
+In the example the \verb|Assignment| constructor is used to build an AST node from the children nodes that are built by the \verb|lhs| and \verb|expression| parsers.
 
 There is no separate scanning phase.
 Parsers for lexical symbols are constructed directly from regular expressions.
 For example, an identifier is parsed by first rejecting keywords and then accepting suitable strings of characters.
 
-\begin{verbatim}
-val ident = not (keyword) ~> "[a-zA-Z][a-zA-Z0-9]*".r
-\end{verbatim}
+\begin{scala}
+  val ident = not (keyword) ~> "[a-zA-Z][a-zA-Z0-9]*".r
+\end{scala}
 
 \noindent
 (The \verb|r| method of a string converts it to a regular expression.)
 
-White space is skipped by the library parsers for literals and regular expressions.
+White space is skipped by the library parsers after literals and after input that matches regular expressions.
 The Scala library supports the definition of white space using a regular expression.
 Oberon-0 white space includes comments that can nest.
 Rather than define an awkward non-standard regular expression for nested comments, we use a Kiama extension of the Scala library that allows white space to be defined by a parser.
 Therefore, we can define Oberon-0 white space as follows, where \verb|whiteSpace| is the default white space regular expression and \verb|any| parses any character.
 
-\begin{verbatim}
-val whitespaceParser = rep1 (whiteSpace | comment)
-val comment = "(*" ~ rep (not ("*)") ~ (comment | any)) ~ "*)"
-\end{verbatim}
+\begin{scala}
+  val whitespaceParser = rep1 (whiteSpace | comment)
+  val comment = "(*" ~ rep (not ("*)") ~ (comment | any)) ~ "*)"
+\end{scala}
 
 \subsection{Name analysis}
 
@@ -129,28 +131,34 @@ Some nodes define new scopes.
 The value of the environment coming in to these nodes is the scope stack from the parent with a new empty scope pushed onto it.
 The value that leaves such a sub-tree is the value used in the sub-tree with the top scope popped.
 (It is important to remember that each of these values is a separate attribute, so no values are being updated.)
-Similarly, a new binding is added to the environment chain at each declaration node.
 
-The environment chain is accessed at each node representing an identifier use to match that use to a binding if possible.
-The definition of the \verb|entity| attribute performs this operation and is typical of attribute definition by cases.
+At any node in the AST the environment chain can be accessed to obtain the visible bindings for that location in the program.
+Specifically, the environment is used and updated at nodes that represent identifier declarations or uses.
+At every node that represents the declaration of an identifier, either a new binding is added to the top scope, or an existing binding in that scope is replaced with a special entity that records that the identifier is multiply-defined in that scope.
+The latter case triggers an error.
+At every node that represents a use of an identifier, the environment is searched to try to find a definition for that identifier.
+An absence of such a definition also triggers an error.
 
-\begin{verbatim}
-val entity : Identifier => Entity =
-  attr {
-    case n @ IdnDef (i) =>
-      if (isDefinedInScope (n->(env.in), i))
-        MultipleEntity
-      else
-        entityFromDecl (n, i)
-    case n @ IdnUse (i) =>
-      lookup (n->(env.in), i, UnknownEntity)
-  }
-\end{verbatim}
+The \verb|entity| attribute encapsulates these computations to associate a specific entity with each identifier occurrence.
+Its definition is typical of attribute definition by cases.
+
+\begin{scala}
+  val entity : Identifier => Entity =
+    attr {
+      case n @ IdnDef (i) =>
+        if (isDefinedInScope (n->(env.in), i))
+          MultipleEntity
+        else
+          entityFromDecl (n, i)
+      case n @ IdnUse (i) =>
+        lookup (n->(env.in), i, UnknownEntity)
+    }
+\end{scala}
 
 \noindent
 The Kiama \verb|attr| function takes a single argument that is a partial function and wraps it with the lazy evaluation properties of attributes.
 Attributes can be accessed in a functional style, or as used here, with the \verb|->| operator.
-Thus, the \verb|env.in| is an attribute that is the value of the environment chain as it enters a node.
+Thus, \verb|env.in| is an attribute that is the value of the environment chain as it enters a node.
 The expression \verb|n->(env.in)| obtains the value of that attribute at node \verb|n|.
 
 It is common to define attributes by cases that pattern match on the AST node.
@@ -162,22 +170,22 @@ The entities can contain properties themselves or fields that refer to AST nodes
 A constant entity holds a reference to the constant declaration node from which the expression defining the constant can be obtained.
 A similar scheme is used for other kinds of declaration.
 An identifier use is associated with the entity for the corresponding declaration.
-Thus, the second case of the example looks the identifier up in the environment, returning the entity found there if there is one, or returning the special \verb|UnknownEntity| if the identifier is not found.
+Thus, the second case of the \verb|entity| definition looks the identifier up in the environment, returning the entity found there if there is one, or returning the special \verb|UnknownEntity| if the identifier is not found.
 
 Most checks are simple conditions on attributes.
 For example, name analysis for the L1 language checks that no declaration is multiply-defined and that each use has an associated declaration.
 These conditions are implemented by the following cases in the \verb|check| method. 
 \verb|n| is the node that is being checked.
 
-\begin{verbatim}
-n match {
-  case d @ IdnDef (i) if d->entity == MultipleEntity =>
-    message (d, i + " is already declared")
-  case u @ IdnUse (i) if u->entity == UnknownEntity =>
-    message (u, i + " is not declared")
-  ...
-}
-\end{verbatim}
+\begin{scala}
+  n match {
+    case d @ IdnDef (i) if d->entity == MultipleEntity =>
+      message (d, i + " is already declared")
+    case u @ IdnUse (i) if u->entity == UnknownEntity =>
+      message (u, i + " is not declared")
+    ...
+  }
+\end{scala}
 
 \noindent
 The \verb|message| method reports a message at the position of the AST node passed as its first argument.
@@ -186,9 +194,9 @@ This name analysis scheme extends easily to other language levels.
 If no new declaration or scoping constructs are added, no changes need to be made.
 The environment chain will simply traverse into the new constructs and the existing checks will be performed.
 New declarations and scoping constructs can be accommodated by extending the definitions of the \verb|entityFromDecl| method and the environment chain.
-For example, in the L3 name analyser the chain is adjusted to take into account procedure scopes.
-New entities are added to represent procedures and parameters.
-All environment processing, entities and checks from earlier levels are reused by the L3 analyser without change.
+For example, in the L3 name analyser the chain is adjusted to take account of procedure scopes.
+New kinds of entities are added to represent procedures and parameters.
+All environment processing, the entities and the checks from earlier levels are reused by the L3 analyser without change.
 
 \subsection{Type checking}
 
@@ -196,7 +204,7 @@ The type analysis components of the Oberon-0 compiler are defined in a similar w
 Each expression has a \verb|tipe| attribute\footnote{\texttt{type} is a reserved word in Scala.} that calculates its type from its contents, and an \verb|exptype| attribute that calculates the type as expected from the context.
 The definitions of these attributes are straight-forward, so we omit them.
 Identifier types are computed from their entities which give access to the declaration site containing declared or implied types.
-Other expression types are given by their operators or literals.
+Other types are given by the operators or literals that occur in expressions.
 Expected types are calculated by pattern matching on the parent of the expression.
 For example, if the parent of an expression is an IF statement node, then the expected type of that expression is Boolean.
 
@@ -205,162 +213,232 @@ The exact definition of compatibility is provided by the \verb|isCompatible| met
 The definition of this method can be overridden in other language levels as the notion of compatibility changes.
 The check itself can be left unchanged.
 
-% FIXME: mention business of having an unknown and allowing it to appear anywhere?
+The type analyser cooperates with the name analyser to avoid reporting spurious errors.
+For example, a name that is assigned an \verb|UnknownEntity| results in a name analysis error.
+It is useless to also report type analysis errors in expressions that use such a name.
+Thus, the type analyser ignores errors that involve unknown entities.
+This behaviour is incorporated in the \verb|isCompatible| method.
 
 \subsection{Source-to-source transformation}
 
-Source-to-source transformation is used in the compiler to implement L2 FOR and CASE statements.
-The analysis of these constructs is performed as described in the previous two section.
+Source-to-source transformation is used in the compiler to implement L2 \verb|FOR| and \verb|CASE| statements.
+The analysis of these constructs is performed as described in the previous two sections.
 Between analysis and code generation, we \emph{desugar} these constructs into equivalent simpler constructs.
-FOR statements are transformed into WHILE statements.
-CASE statements are transformed into cascades of IF statements.
+\verb|FOR| statements are transformed into \verb|WHILE| statements.
+\verb|CASE| statements are transformed into cascades of \verb|IF| statements.
 
 A transformation component implements a single method that takes as argument the root of a source AST and returns a possibly transformed AST.
-As for analysis phases, a transformer at one level will call transformations at lower levels, so the transformations will be composed.
+As for analysis phases, a transformer at one level will call transformations at lower levels, so the transformations are composed.
+
 Transformations are implemented using Kiama's strategic term rewriting library.
 For example, the L2 transformation is defined simply as
 
-\begin{verbatim}
-everywhere (desugarFor + desugarCase)
-\end{verbatim}
+\begin{scala}
+  everywhere (desugarFor + desugarCase)
+\end{scala}
 
 \noindent
-which tries to apply first the FOR transformation and, if that fails, the CASE transformation at every node in the tree.\footnote{An optimisation could be applied to attempt this transformation only in places where statements can occur.}
+which at every node in the tree first tries to apply the \verb|FOR| transformation and, if that fails, tries to apply the \verb|CASE| transformation.\footnote{An optimisation could be applied to attempt this transformation only in places where statements can occur.}
 
-The actual FOR transformation is defined by the \verb|desugarFor| rule which simply pattern matches and returns the replacement tree fragment.
-A FOR statement is translated into a block containing a declaration of a variable to hold the limit of the iteration and a WHILE statement to implement the loop.
-This approach means that we do not need a different variable name for each FOR loop, since the scoping rules ensure that each loop will refer to the correct variable even if FOR loops are nested.
+\begin{figure}[t]
+\begin{scala}
+  val desugarFor =
+    rule {
+      case ForStatement (idnexp, lower, upper, optby,
+                         Block (Nil, stmts)) =>
+        val limvarname = "limit"
+        val limexp = IdnExp (IdnUse (limvarname))
+        val incval = optby.map (_->value).getOrElse (1}
+        val rincval = IntExp (incval)
+        val cond = if (incval >= 0}
+                       LeExp (idnexp, limexp)
+                   else
+                       GeExp (idnexp, limexp)
+        Block (
+          List (
+            VarDecl (List (IdnDef (limvarname)),
+                     NamedType (IdnUse ("INTEGER")))
+          ),
+          List (
+            Assignment (clone (idnexp), lower),
+            Assignment (clone (limexp), upper),
+              WhileStatement (cond,
+                Block (
+                  Nil,
+                  stmts :+
+                    Assignment (clone (idnexp),
+                                AddExp (clone (idnexp), rincval))))
+           )
+        )
+    }
+\end{scala}
+\caption{Kiama desugaring of a \texttt{FOR} statement into a block containing a \texttt{WHILE} statement.}
+\label{fig:desugar}
+\end{figure}
+
+The actual \verb|FOR| transformation is defined by the \verb|desugarFor| rule which simply pattern matches and returns the replacement tree fragment (Figure~\ref{fig:desugar}).
+A \verb|FOR| statement is translated into a block containing a declaration of a variable to hold the limit of the iteration and a \verb|WHILE| statement to implement the loop.
+This approach means that we do not need a different variable name for each \verb|FOR| loop, since the scoping rules ensure that each loop will refer to the correct variable even if \verb|FOR| loops are nested.
 Note that the Oberon-0 source language does not allow nested blocks, but our abstract syntax does so that these kinds of transformations are easier to define.
-
-\begin{verbatim}
-val desugarFor =
-  rule {
-    case ForStatement (idnexp, lower, upper, optby, Block (Nil, stmts)) =>
-      val limvarname = "limit"
-      val limexp = IdnExp (IdnUse (limvarname))
-      val incval = optby.map (_->value).getOrElse (1)
-      val rincval = IntExp (incval)
-      val cond = if (incval >= 0)
-                     LeExp (idnexp, limexp)
-                 else
-                     GeExp (idnexp, limexp)
-      Block (
-        List (
-          VarDecl (List (IdnDef (limvarname)),
-                   NamedType (IdnUse ("INTEGER")))
-        ),
-        List (
-          Assignment (clone (idnexp), lower),
-          Assignment (clone (limexp), upper),
-            WhileStatement (cond,
-              Block (
-                Nil,
-                stmts :+
-                  Assignment (clone (idnexp), AddExp (clone (idnexp), rincval))))
-         )
-      )
-  }
-\end{verbatim}
-
-FIXME: too much code?
 
 A complication in this rule is that we must be careful not to insert the same node in more than one place.
 For example, when we want to refer to the \verb|limit| variable in the assignment statement, we must use a different node to the appearance of that variable in the condition.
 Cloning is necessary because attributes are cached using the node identity as the key and the two nodes will in general have different attribute values.
 In fact, the compiler is conservative when it comes to reuse of attribute values.
-The attribute caches are cleared before any transformation to ensure that old, potentially incorrect values are not carried over to the new AST.
+The attribute caches are cleared before any transformation to ensure that old, potentially incorrect values are not carried over to the new AST.\footnote{We expect future versions of Kiama to have more automatic support for attribute invalidation during rewriting, so that wholesale cache clearance is not always necessary.}
 
 \subsection{Code generation}
 \label{sec:kiama-codegen}
 
-FIXME: translation components, lifting, pretty-printing
+The code generation components of the compiler comprise three main parts: adjustments to the source AST to prepare for translation, translation from the source AST to the target AST, and pretty-printing of the target AST.
+There is one code generation component for each language level.
+The code generator for one level invokes the code generator for the next lower level to deal with constructs at that lower level.
 
-% PP: priority etc stuff for paren insertion
+At some language levels the source AST is more permissive than the target AST and must be simplified before a straight-forward translation can be performed.
+For example, the source AST for L3 contains procedure declarations that can appear at any nesting level.
+The target AST only allows C function declarations to appear at the top level.
+Thus, the code generator lifts inner declarations to the outer level, renaming identifiers as necessary to retain uniqueness.
+
+Once the source tree has been adjusted in this way, it can be easily translated into a target AST.
+Oberon-0 constructs translate directly across to equivalent C ones.
+The translation is performed by a collection of mutually recursive functions that deal with each source AST construct and produce the corresponding target AST construct.
+The translator mangles user-level identifiers to avoid clashes with pre-defined C names.
+
+Finally, the target AST is pretty printed to produce the C program text.
+The only slightly complex part of the pretty printer is the part that minimises the use of parentheses in the generated code.
+The pretty printer uses Kiama's facilities for minimal parenthesis insertion.
+Parentheses are only inserted in expressions where they are needed to override the natural precedence or associativity of operators.
+The target AST node definitions are augmented with the precedence and associativity information that Kiama needs.
 
 \subsection{Artifacts}
 \label{sec:kiama-artifacts}
 
+\newcommand{\head}[1]{\multicolumn{1}{c|}{\emph{#1}}}
+\newcommand{\cell}[2]{\multicolumn{1}{c|}{\begin{tabular}{c}#1 \\ \emph{#2}\end{tabular}}}
+% \newcommand{\cell}[2]{\centering #1 \\ \emph{#2}}
+
 \begin{table}\centering
-\begin{tabular}{|l|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|} \hline
-& \multicolumn{4}{c|}{\emph{Language}} \\ \hline
-& \emph{L1}    & \emph{L2}    & \emph{L3} & \emph{L4} \\ \hline
+\begin{tabular}{|l|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|} \hline
+\emph{Component} & \multicolumn{4}{c|}{\emph{Language}}                                  & \head{Total} \\ \hline
+& \head{L1}            & \head{L2}           & \head{L3}           & \head{L4}           & \\ \hline
+\emph{Oberon-0 AST}
+& \cell{All}{81}       & \cell{All}{14}      & \cell{All}{13}      & \cell{All}{11}      & \cell{}{119} \\ \hline
 \emph{Parser}
-& All          & All          & 2a, 3, 4  & 4         \\ \hline
-\emph{Oberon-0 pretty printer}
-& All          & All          & 2a, 3, 4  & 4         \\ \hline
+& \cell{All}{148}      & \cell{All}{33}      & \cell{2a, 3, 4}{30} & \cell{4}{28}        & \cell{}{239} \\ \hline
+\emph{Oberon-0 printer}
+& \cell{All}{122}      & \cell{All}{41}      & \cell{2a, 3, 4}{25} & \cell{4}{30}        & \cell{}{218} \\ \hline
 \emph{Name analyser}
-& All          & All          & 2a, 3, 4  & 4         \\ \hline
+& \cell{All}{142}      & \cell{All}{18}      & \cell{2a, 3, 4}{67} & \cell{4}{26}        & \cell{}{253} \\ \hline
 \emph{Type analyser}
-& 2b, 3, 4     & 2b, 3, 4     & 3, 4      & 4         \\ \hline
+& \cell{2b, 3, 4}{102} & \cell{2b, 3, 4}{27} & \cell{3, 4}{90}     & \cell{4}{109}       & \cell{}{328} \\ \hline
 \emph{Desugarer}
-& 3, 4         & 3, 4         & 3, 4      &           \\ \hline
+& \cell{3, 4}{32}      & \cell{3, 4}{81}     &                     &                     & \cell{}{113} \\ \hline
 \emph{Lifter}
-& 3, 4         & 3, 4         & 3, 4      &           \\ \hline
-\emph{Oberon-0 to C Translator}
-& 4            & 4            & 4         & 4         \\ \hline
-\emph{C pretty printer}
-& 4            & 4            & 4         & 4         \\ \hline
+&                      & \cell{3, 4}{22}     &                     &                     & \cell{}{22}  \\ \hline
+\emph{C AST}
+& \cell{4}{92}         &                     & \cell{4}{17}        & \cell{4}{7}         & \cell{}{116} \\ \hline
+\emph{Code generator}
+& \cell{4}{120}        &                     & \cell{4}{83}        & \cell{4}{50}        & \cell{}{253} \\ \hline
+\emph{C printer}
+& \cell{4}{106}        &                     & \cell{4}{26}        & \cell{4}{28}        & \cell{}{160} \\ \hline
+\emph{Total}
+& \head{945}           & \head{236}          & \head{351}          & \head{289}          & \head{1821} \\ \hline
 \end{tabular}
-\caption{Kiama Oberon-0 components and their allocation to the artifacts.}    
+\caption{Kiama Oberon-0 compiler components and sizes.
+The first line in each cell lists the artifacts in which each task-specific component appears.
+The second line gives the number of non-blank, non-commented lines of Scala code in the component.}
 \label{tab:kiama-artifacts}
 \end{table}
 
-The Kiama Oberon-0 challenge artifacts are constructed by combining components that each address a single phase for a particular language.
-The components and their compositions into the artifacts are summarised in Figure \ref{tab:kiama-artifacts}.\footnote{
+The Kiama Oberon-0 challenge artifacts are constructed by combining components that each address a single processing task for a particular language.
+The components and their compositions into the artifacts are summarised in Table~\ref{tab:kiama-artifacts}.\footnote{
 Actually, the implementation has two simpler language levels, Base and L0, below the first challenge level.
 In our discussion, we have considered Base and L0 to be part of L1.
 }
-Each cell in the table represents a separate component, implemented by a Scala trait.
+Each cell in the table represents a separate task-specific component, implemented by a Scala trait.
 A particular artifact is created by mixing together the traits as indicated.
 For example, the A1 artifact has just the components for parsing, pretty printing and name analysis for the L1 and L2 languages.
 The A2a artifact augments the A1 artifacts by adding the first three phases for L3.
+The cells also contain the number of non-blank, non-commented lines of Scala code in the component.
 
 Using traits and mixin composition allows us to reuse code in very flexible ways. 
 Reading across a line in Table~\ref{tab:kiama-artifacts}, each component extends the one to its left.
 For example, the L3 parser just adds parsers for the new constructs in L3 and gets the L2 and L1 parsers for free.
 Also, reading down the columns, each component can use facilities from the one above it.
 For example, the type analyser for L2 can use information provided by the name analyser for L2.
-The result is an extremely flexible design in which each component is focused on a single phase and sub-language.
-
-FIXME: Too abstract still? Show an example of how we actually assemble an artifact?
-
-FIXME: reference cake pattern paper
-
-FIXME: need to talk about the driver at all?
+The result is an extremely flexible design in which each component is focused on a single task and sub-language.
 
 The ``magic'' of this kind of mixin composition is that the traits declare their dependency on the \emph{type} of class into which they can be mixed.
+This approach to software composition is often referred to as the \emph{cake pattern}~\cite{Odersky05a}.
 For example, a type analyser can say that it needs a name analyser, but does not have to statically import a particular one.
 Therefore the decision about how to compose the pieces is left until the traits are mixed together.
 The Scala compiler statically ensures that a particular composition is legal.
 
-FIXME: more work needed
+In addition to the task-specific components listed in the table, the compiler contains one driver component for each artifact.
+A driver combines all of the components for a particular artifact with a base level driver that handles common tasks such as command-line option processing and file handling.
+The base level driver is 183 lines of code and the artifact drivers are each between ten and twenty lines of code.
 
-% FIXME Analysis stacking:
-% given the root of the AST and it conducts the relevant analysis.
-% The base implementation of \verb|check| calls itself recursively on the children of each node that is examined, so the whole AST is checked.
-% When a new analysis component is written, it performs its checks then calls the next analysis component.
-% The checks for a particular language level include the checks for lower levels.
-% As more language levels are added, only the new constructs need to be checked.
-% Therefore, in addition to performing any new checks, the \verb|check| method of one level also calls the \verb|check| method of the level below it.
-% Thus, the analysis components are connected together in series.
+To illustrate how an artifact is composed in practice, consider the driver for the A4 artifact, which is defined as follows.
 
-\subsection{Observations}
-\label{sec:kiama-observe}
+\begin{scala}
+  trait A4Phases extends base.TranslatingDriver
+      with L4.Parser
+      with L4.source.PrettyPrinter
+      with L4.NameAnalyser
+      with L4.TypeAnalyser
+      with L2.Lifter
+      with L2.Desugarer
+      with L4.CCodeGenerator
+      with L4.c.PrettyPrinter {
+  
+      def artefact = "A4"
+      def langlevel = 4
+      def tasklevel = 6
+  
+  }
 
-FIXME: in no particular order:
+  object A4 extends A4Phases  
+\end{scala}
 
-\begin{itemize}
-\item simple DSLs with simple implementations for the processing paradigms compared to non-trivial implementation of standalone AG and RW systems
-\item ability to focus on core of language processing issues, leaving things like modularity, composition, basic computation, data structures to GPL rather than having to shoehorn everything into the domain view
-\item case class construction and pattern matching is ideal for this kind of application
-\item very powerful composition model for free
-\item missing some aspects of domain-specific composition, eg ability to implicitly compose definitions
-\item need a more automatic way of dealing with the combination of attributes and rewritten trees
-\item manual cloning of nodes in rewriting is tedious and error prone
-\item rewriting could really do with concrete syntax support
-\item some limitations from host GPL, biggest one is inability to call super on val definitions
-\end{itemize}
+\noindent
+The phases for this driver are obtained by mixing the relevant parser, pretty printers, analysers, and so on, with a base level translating driver.
+The \verb|A4Phases| trait represents the composed components and can be extended to make other compositions.
+The \verb|A4| object is a singleton that is the main program for this artifact.
+The AST definitions are not mixed in to the driver.
+They are statically defined and imported by any component that needs them since they form the basis of all components.
 
 \subsection{Conclusions}
+\label{sec:kiama-observe}
 
-FIXME
+The main tenet of the Kiama design is to reuse as much as possible from the host Scala language.
+This approach allows our compiler implementation to focus on core language processing issues, leaving aspects such as data structures, modularity and composition to Scala.
+Features such as case classes, pattern matching, and trait-based mixin composition were particularly useful for constructing the compiler in a modular fashion.
+
+The compiler uses four language processing paradigms provided by the Scala library and Kiama: combinator parsing, attribution, term rewriting and pretty printing.
+All of the paradigms are implemented without any pre-processing steps so the code we write is just plain Scala.
+Each of the paradigms integrates easily with the others due to their common basis in Scala.
+The notations are lightweight and their implementation in the libraries is simple.
+
+On the other hand, Kiama is not able to specialise the notations and how they are processed beyond what is possible in plain Scala.
+We are limited in the domain-specific analysis and optimisation that we can do, since all processing is performed by a standard Scala compiler.
+The result is that some checks that would ideally be performed statically are deferred until run-time.
+For example, it is not possible to statically analyse whether an attribute definition is circular.
+Further, it is not possible to implicitly compose definitions by using common names; explicit composition is required.
+While developing the Oberon-0 compiler we didn't notice any major downsides from this approach.
+The notations that Scala and Kiama provide are close enough to domain-specific ideals to yield clear code.
+We have not observed any performance issues in this compiler arising from the lack of domain-specific optimisations.
+
+In a few places we have found limitations in Scala that make our code more awkward than it should be.
+For example, the current version of Scala does not allow us to access overridden \verb|val| definitions from a sub-class.
+Instead, we must define them using \verb|def| constructs which can both be overridden and accessed from a sub-class.
+We are hopeful that these sorts of deficiencies will be remedied in Scala eventually.
+
+The exercise of building this compiler has made it clear that Kiama could be more helpful in a number of areas.
+Firstly, the combination of attribution and rewriting can be problematic.
+For example, if you have already calculated an attribute of a tree node and that node is used in a rewritten tree, what happens to the attributes?
+At present, our solution is to clearly separate attribution and rewriting tasks, resetting all attribute values between tasks.
+The interaction between attribution and rewriting is also apparent when nodes would be duplicated in a rewrite rule.
+Since the attribution implementation is based on the identity of a node, it is necessary to manually clone nodes rather than use them in more than one place.
+It is future work to combine these attribution and rewriting in a more fine-grained manner while ensuring that only correct attribute values are accessible and that nodes are only cloned when necessary.
+Secondly, Kiama does not currently provide concrete object syntax for use in pattern matching and tree construction.
+Adding it would make code such as that shown in Figure~\ref{fig:desugar} much easier to write and understand.

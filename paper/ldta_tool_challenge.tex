@@ -83,6 +83,7 @@
 \usepackage{subfig}
 \usepackage{multirow}
 \usepackage{comment}
+
 \lstdefinelanguage{ocaml}{
 keywords={let, begin, end, in, match, type, and, fun, function, try, with, class, object, method, of, rec, repeat, until,
           while, not, do, done, as, val, inherit, module, sig, deriving, datatype, struct, if, then, else, ostap},
@@ -94,14 +95,27 @@ keywords={MODULE, END, PROCEDURE, VAR, TYPE, CONST, FOR, WHILE, CASE, IF, BEGIN,
 sensitive=true
 }
 
+\lstdefinelanguage{scala}{
+   keywords={abstract,case,catch,class,def,do,else,extends,false,final,
+     finally,for,forSome,if,implicit,import,lazy,match,new,null,
+     object,override,package,private,protected,requires,return,
+     sealed,super,this,throw,trait,try,true,type,val,var,while,
+     with,yield},
+   sensitive=true
+}
+
+\newcommand{\scalasize}{\fontsize{9pt}{9pt}}
+\lstnewenvironment{scala} {\lstset{language={scala}}\scalasize}{}
+\newcommand\textscala[1]{{\lstinline[language={scala}]{#1}}}
+\newcommand\textscalaF[1]{{\scalasize\lstinline[language={scala}]{#1}}}
+
 \lstset{
-basicstyle=\small,
+basicstyle=\small\ttfamily,
 identifierstyle=\ttfamily,
 keywordstyle=\ttfamily\bfseries,
 commentstyle=\scriptsize\rmfamily,
 basewidth={0.5em,0.5em},
-fontadjust=true,
-escapechar=~,
+fontadjust=true
 }
 
 \journal{Science of Computer Programming}
