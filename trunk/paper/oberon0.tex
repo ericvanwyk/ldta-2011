@@ -1,0 +1,102 @@
+\section{Oberon-0}
+\label{sec:oberon}
+
+Oberon-0 is an imperative programming language designed by Niklaus Wirth for his compiler construction book~\cite{Wirth96}.
+Wirth's aim was to have a simple, yet familiar language, containing enough fundamental constructs to require most standard compilation techniques.
+The language contains a standard collection of imperative features: constants; basic, array and record types; variables; expressions; assignment, conditional and while statements; and procedures with both value and variable parameter passing modes.
+Figure~\ref{fig:oberonexample} shows a simple Oberon-0 program that reads a number and prints its multiples up to ten.
+More Oberon-0 examples can be found in \ref{sec:samples}.
+
+\begin{figure}[t]
+\begin{oberon0}
+MODULE Multiples;
+
+CONST
+  limit = 10;
+
+VAR
+  base, count : INTEGER;
+  mult : INTEGER;
+
+PROCEDURE calcmult (i : INTEGER; base : INTEGER;
+                    VAR result : INTEGER);
+BEGIN
+  result := i * base
+END calcmult;
+
+BEGIN
+  Read (base);
+  FOR count := 1 TO limit DO
+    calcmult (count, base, mult);
+    Write (mult);
+    WriteLn
+  END
+END Multiples.
+\end{oberon0}
+\caption{An Oberon-0 program to read a number \texttt{base} and print out its successive multiples up to ten.}
+\label{fig:oberonexample}
+\end{figure}
+
+As can be seen from the examples, Oberon-0 lives in Wirth's Pascal family of languages and is most closely related to Oberon.
+It does not have any of the procedure variable or record extension features of the later languages in that family, nor any of the modularity features of earlier languages such as Modula-2.
+
+Compilation of Oberon-0 was chosen as the subject for the LDTA Tool Challenge for two main reasons.
+First, the language and techniques for compiling it were sufficiently standard that the participants did not have to learn a new problem domain.
+While a more complex task might be preferable in some sense, for this challenge we felt it was best to have a familiar, tractable problem space.
+Second, the existence of Wirth's book meant that a resource already existed to describe the language.
+The book contains a compiler implementation which we used as a reference implementation.
+
+Unfortunately, both the book's description of Oberon-0 and the implementation proved to be incomplete, so on a few occasions we resorted to defining the desired behaviour ourselves.
+For example, the language description implies that scopes can be arbitrarily nested, but the implementation does not handle this generality.
+For the challenge we agreed to follow the reference implementation, although many of our implementations are more general.
+
+The challenge was to implement a compiler for Oberon-0.
+We broke the task down into smaller sub-tasks so that participants could choose how much to implement.
+Also, we aimed to demonstrate different techniques for modularity of language implementation.
+Therefore, we first defined different language levels within the full Oberon-0 definition.
+A language level comprises a set of features that must be implemented.
+We then defined language processing tasks that apply to any language.
+A task comprises a particular processing activity.
+Table~\ref{tab:levelstasks} lists the language levels and tasks.\footnote{At early stages of the challenge, tasks 4 and 5 were split to include optimisation and RISC code generation, respectively. These tasks were dropped later since they were orthogonal to the main aim of the challenge.}
+
+\begin{table}\centering
+\begin{tabular}{|cl|} \hline
+\multicolumn{2}{|c|}{\emph{Language levels}} \\ \hline
+L0 & Basic constants, types and variables      \\
+   & simple expressions, assignment statements \\ \hline
+L1 & Add \verb|IF| and \verb|WHILE| statements \\ \hline
+L2 & Add \verb|FOR| and \verb|CASE| statements \\ \hline
+L3 & Add procedures                            \\ \hline
+L4 & Add arrays and records                    \\ \hline
+\multicolumn{2}{c}{} \\ \hline
+\multicolumn{2}{|c|}{\emph{Processing tasks}} \\ \hline
+T1 & parsing and pretty printing \\ \hline
+T2 & name analysis \\ \hline
+T3 & type analysis \\ \hline
+T4 & desugaring \\ \hline
+T5 & C code generation \\ \hline
+\end{tabular}
+\caption{Language levels and processing tasks used in the challenge.}
+\label{tab:levelstasks}
+\end{table}
+
+Any combination of a language level and task constitutes an artifact that could be constructed.
+For example, choosing L2 and T3 we obtain an artifact that can type check programs containing up to \verb|FOR| and \verb|CASE| statements, but does not support procedures or structured types, and cannot generate code.
+For the challenge, we specified four combinations on which participants were to focus (Table~\ref{tab:artifacts}).
+These combinations were chosen to control the complexity of the challenge, but also to be representative of a progression that a real implementation might go through.
+Our aim was to enable participants to demonstrate the modularity of their approaches in a variety of realistic situations.
+
+\begin{table}\centering
+\begin{tabular}{|c|c|c|l|} \hline
+\emph{Artifact} & \emph{Language} & \emph{Tasks} & \\ \hline
+A1  & L2 & T1-2 & Core language with pretty printing and \\
+    &    &      & name binding \\ \hline
+A2a & L3 & T1-2 & A1 plus syntax and name binding for \\
+    &    &      & procedures \\ \hline
+A2b & L2 & T1-3 & A1 plus type checking \\ \hline
+A3  & L3 & T1-3 & A2a and A2b \\ \hline
+A4  & L4 & T1-5 & Full language and all tasks \\ \hline
+\end{tabular}
+\caption{The artifacts that were developed during the challenge.}
+\label{tab:artifacts}
+\end{table}
