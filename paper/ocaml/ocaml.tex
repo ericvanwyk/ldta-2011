@@ -79,9 +79,9 @@ example --- expression evaluator. The idea is to implement evaluator as a
 collection of functions each of which evaluates only the limited subset of expression's
 nodes and then to combine them to construct the evaluator of the whole expression.
 
-First, consider the function which transforms only two expression nodes ---
-addition and subtraction\footnote{Polymorphic variant type constructors are lexically distinguished
-from the regular ones by the backquote as their first character.}:
+First, consider the function which transforms expression nodes corresponding to some binary 
+operators --- say addition and subtraction\footnote{Polymorphic variant type constructors are 
+lexically distinguished from the regular ones by the backquote as their first character.}:
 
 \begin{lstlisting}[language=ocaml]
 let rec evalAddSub ext expr =
@@ -98,10 +98,12 @@ by \lstinline{evalAddSub}. Note that since we want to transform potentially recu
 structures we have to provide extension function with it's own extension function which 
 should be able to transform the all nodes of expression, including \lstinline{`Add} and
 \lstinline{`Sub}. This extension function (``\lstinline{self}'') is acquired by partial
-application \lstinline{evalAddSub} to \lstinline{ext}.
+application \lstinline{evalAddSub} to \lstinline{ext}. Note that we just provided some 
+transformer for the \emph{incomplete}, or \emph{open}, type since actually no (final) 
+expression can be constructed using only \lstinline{`Add} and \lstinline{`Sub}. 
 
-Now we can provide two additional functions for evaluating identifiers in some state 
-\lstinline{s} and multiplication:
+Now we provide similar extensible function for evaluating identifiers in some state 
+\lstinline{s}:
 
 \begin{lstlisting}[language=ocaml]
 let rec evalIdent s ext expr =
@@ -111,21 +113,20 @@ let rec evalIdent s ext expr =
   | z -> ext self z
 \end{lstlisting}
 
-\begin{lstlisting}[language=ocaml]
-let rec evalMult ext expr =
-  let self = evalMult ext in
-  match expr with
-  | `Mul (x, y) -> self x * self y
-  | z -> ext self z
-\end{lstlisting}
-
 Note that the semantics of these functions is almost completely type-driven; despite
 we do not have any type declaration here we actually think in terms of types, not
 in terms of implementation details. The only concrete implementation-dependent feature
 is the essense of constructor-specific transformation; we'll get rid of this specificity 
 later. Note also that these functions are completely independent of each other; thus, they 
 can be implemented in a different compilation units or provided at arbitrary moments of 
-program execution.
+program execution; this difference distingushes the approach under considerations from that 
+described in~\cite{PVReuse}.
+
+It is easy to see that certain combination (namely, type sum, or disjunction) of open types 
+implicitly defined by \lstinline{evalIdent} and \lstinline{evalAddSub} provides some meaningful
+type for expression trees made of identifiers, additions and subtractions. It is desirable to
+obtain the transformer for this sum type directly from the transformers of its summands without
+tedious repeating boilerplate per-constructor processing. Of course this is possible.
 
 Now we introduce the combinator which plays role of type sum:
 
@@ -143,13 +144,28 @@ let evalAddSubIdent s = evalIdent s ++ evalAddSub
 \end{lstlisting}
 
 is (an extensible) function which evaluates expressions with nodes \lstinline{`Add}, \lstinline{`Sub} and
-\lstinline{`Ident}. This function can further be combined:
+\lstinline{`Ident}. The extensibility means that we always can append some functionality expressed as
+type-driven transformer to already existing functions. For example, if we want to add a new expression
+node --- say, multiplication --- we always can provide transformer for just this node and then combine 
+it with the existing transformer for the others:
 
 \begin{lstlisting}[language=ocaml]
-let evalAddSubIdentMult s = evalAddSubIndent s ++ evalMult
+let rec evalMul ext expr =
+  let self = evalMul ext in
+  match expr with
+  | `Mul (x, y) -> self x * self y
+  | z -> ext self z
+
+let evalAddSubIdentMul s = evalAddSubIndent s ++ evalMul
 \end{lstlisting}
 
-et cetera. 
+et cetera. In context of the tool challenge the extensibility of transformers was used a number of times.
+For example, L4 extends L1 at the expression level by adding field and array access, L2 extends L1 at the 
+statement level by adding \lstinline{FOR}- and \lstinline{CASE} constructs, L3 extends L2 at the statement 
+level by adding procedure invocation etc. Moreover since all partial transformers are independent on
+each other it is possible to combine them in an arbitrary manner --- for example it is possible to
+extend expressions with procedure invocations or combine statements and expressions into the joint type with
+no modifications (or even recompilation) of their counterparts.
 
 When we need to actually apply these transformers to a data structure we have to provide
 some sort of ``ultimate'' extension function; it is easy to see that this function is just
@@ -173,7 +189,8 @@ let x =
 
 the name \lstinline{x} would be bound to \lstinline{-1}.
 
-In the previous examples we considered some concrete transformers --- evaluators.
+In the previous examples we considered some concrete transformers --- evaluators. This means
+that we need a separate transformer for the each task (say, name resolver or typechecker).
 However a simple generalization would let us abstract this specificity away. Namely, 
 we preserve the overall control flow of the transformers but parameterize the
 actions carried out for each constructor. The generalized version of the first 
@@ -189,7 +206,8 @@ let rec gmapAddSub t ext expr =
 \end{lstlisting}
 
 Here \lstinline{t} stands for the constructor-wise transformer encoded
-as an \emph{object} with methods ``\lstinline{add}'' and ``\lstinline{sub}''.
+as an \emph{object} with methods ``\lstinline{add}'' and ``\lstinline{sub}''\footnote{Punctuator ``\lstinline{#}'' 
+in OCaml stands for object method invocation.}.
 Each method takes the results of the same transformation applied to the
 direct counterparts of matched value and that value itself as arguments
 and returns the result of the transformation. Now the evaluation function
