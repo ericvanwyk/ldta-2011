@@ -122,12 +122,11 @@ can be implemented in a different compilation units or provided at arbitrary mom
 program execution; this difference distingushes the approach under considerations from that 
 described in~\cite{PVReuse}.
 
-It is easy to see that certain combination (namely, type sum, or disjunction) of open types 
+It is easy to see that certain combination (namely, type sum, or union) of open types 
 implicitly defined by \lstinline{evalIdent} and \lstinline{evalAddSub} provides some meaningful
 type for expression trees made of identifiers, additions and subtractions. It is desirable to
 obtain the transformer for this sum type directly from the transformers of its summands without
 tedious repeating boilerplate per-constructor processing. Of course this is possible.
-
 Now we introduce the combinator which plays role of type sum:
 
 \begin{lstlisting}[language=ocaml]
@@ -146,7 +145,7 @@ let evalAddSubIdent s = evalIdent s ++ evalAddSub
 is (an extensible) function which evaluates expressions with nodes \lstinline{`Add}, \lstinline{`Sub} and
 \lstinline{`Ident}. The extensibility means that we always can append some functionality expressed as
 type-driven transformer to already existing functions. For example, if we want to add a new expression
-node --- say, multiplication --- we always can provide transformer for just this node and then combine 
+node --- say, multiplication --- we always can provide a transformer for just this node and then combine 
 it with the existing transformer for the others:
 
 \begin{lstlisting}[language=ocaml]
@@ -266,12 +265,57 @@ let mapT f = object
 \end{lstlisting}
 
 The final generalization consists of ``lifting'' the transformation functions
-over some monad~\cite{Monads}. The implementation is straightforward so we omit it
-here; we note that the parameterization over a monad is implemented using OCaml functors. 
-In this implementation of Oberon0 we used three monads --- a variant 
-of exception monad called \lstinline{Checked}, identity monad \lstinline{Id} and list 
-monad \lstinline{List}. We refer to the monad-specific transformation functions for 
-the two former monads as \lstinline{cmap} and \lstinline{imap} respectively.
+over some monad~\cite{Monads}. Since the only way in OCaml to parametrize over a
+type constructor is to use functors we encode monads with the following \emph{module type}:
+
+\begin{lstlisting}[language=ocaml]
+module type S = 
+  sig
+    type 'a t
+    val return : 'a -> 'a t
+    val (>>=)  : 'a t -> ('a -> 'b t) -> 'b t
+    val (>=)   : 'a t -> ('a -> 'b) -> 'b t
+    val list   : 'a t list -> 'a list t
+    val tuple  : ('a t * 'b t) -> ('a * 'b) t 
+  end
+\end{lstlisting}
+
+The first three functions are conventional monadic operators while \lstinline{list} and
+\lstinline{tuple} are just a supplementary shortcuts. We illustrate the monadic version of 
+type-driven transformer by presenting the concrete implementation for simple expressions:
+
+\begin{lstlisting}[language=ocaml]
+module Mapper (M : Monad.S) =
+  struct
+    open M
+    let rec gmap t ext expr = 
+      let self = gmap t ext in
+      match expr with
+      | `Binop (op, x, y) -> tuple (self x, self y) >>= 
+                             (fun (x, y) -> t#binop expr op x y)
+      | `Unop  (op, x)    -> self x >>= (fun x -> t#unop expr op x)
+      | `Const  x         -> t#const expr x
+      |  x                -> ext self x 
+  end
+\end{lstlisting}
+
+Lifing over a monad allows to express some additional features of transformations
+such as error processing etc.
+
+For the implementation of Oberon0 we used three monads --- a variant of exception monad 
+called \lstinline{Checked}, identity monad \lstinline{Id} and list monad \lstinline{List}. 
+For the first two monads we provided a specialized transformation function \lstinline{cmap}
+and \lstinline{imap} for each of open types used in the implementation:
+
+\begin{lstlisting}[language=ocaml]
+let cmap t ext expr =
+  let module M = Mapper (Monad.Checked) in
+  M.gmap t ext expr
+
+let imap t ext expr =
+  let module M = Mapper (Monad.Id) in
+  M.gmap t ext expr
+\end{lstlisting}
 
 \subsection{Scanning, parsing and pretty-printing}
 
@@ -516,7 +560,9 @@ Here ``\lstinline{ext}'', as usually, stands for the extension transformation. T
 code just propagates the lowering transformation through all the constructs of the AST. All
 nontrivial work is done by methods ``\lstinline{case}'' and 
 ``\lstinline{forc}''\footnote{``\lstinline{for}'' is a reserved word in OCaml.} which are 
-called when the corresponding construct is encountered in the tree.
+called when the corresponding construct is encountered in the tree. Multiple occurrencies of \lstinline{Monad.List.return}
+correspond to the identity monadic wrappings of those parts of the AST which are not 
+considered as the subject for the transformation (references, constant expressions, expressions etc.)
 
 Method ``\lstinline{case}'' takes the original AST node for the CASE statement 
 (which actually is never used for the lowering, hence the wildcard symbol ``\lstinline{_}'' 
