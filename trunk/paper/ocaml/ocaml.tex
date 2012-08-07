@@ -8,8 +8,8 @@ first-class high-order functions, parametric polymorphism and type inference. In
 OCaml consistently incorporates object-oriented traits --- objects and classes with 
 structural subtyping, rich module system with first-class modules and \emph{functors} (that is, 
 modules parameterized by other modules) which makes it a full-fledged multiparadigm programming
-language. In addition OCaml is equipped with syntax extension tool --- 
-CamlP4\footnote{http://brion.inria.fr/gallium/index.php/Camlp4}/CamlP5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allows to extend the host language with domain-specific constructs. 
+language. In addition OCaml is equipped with a syntax extension tools --- 
+CamlP4\footnote{http://brion.inria.fr/gallium/index.php/Camlp4}/CamlP5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allow to extend the host language with domain-specific constructs. 
 
 We argue that in its present state OCaml is already rich enough to be directly used as an 
 implementation formalism for all the tasks listed for the tool challenge. Apart from parsing and 
@@ -302,7 +302,7 @@ module Mapper (M : Monad.S) =
 Lifing over a monad allows to express some additional features of transformations
 such as error processing etc.
 
-For the implementation of Oberon0 we used three monads --- a variant of exception monad 
+For the implementation of Oberon-0 we used three monads --- a variant of exception monad 
 called \lstinline{Checked}, identity monad \lstinline{Id} and list monad \lstinline{List}. 
 For the first two monads we provided a specialized transformation function \lstinline{cmap}
 and \lstinline{imap} for each of open types used in the implementation:
@@ -732,6 +732,88 @@ their usages within the function body and actual parameters of function invocati
 
 \subsection{Artifacts}
 
+The complete metrics expressed in non-blank non-comment lines of code for OCaml implementation are 
+shown on Figure~\ref{OCamlmap}. Column ``utility'' corresponds to the supplementary components 
+such as toplevel drivers or type-driven transformers. ``N/A'' means that a certain task was not implemeted 
+for a certain language; ``0'' means the complete reuse (i.e. the task is completely inherited from the 
+implementation for the previous language in the hierarhy).
+
+\begin{figure}
+\centering
+\begin{tabular}{|c||c|c|c|c|c|c||c|}
+\hline
+ & T1 & T2 & T3 & T4 & T5 & utility & total \\
+\hline
+\hline
+L1 & 227 & 129 & 56 & N/A & N/A & 416 & 828 \\
+L2 & 77 & 22 & 38 & N/A & N/A & 48 & 185 \\
+L3 & 90 & 148 & 50 & N/A & N/A & 1 & 289 \\
+L4 & 70 & 64 & 82 & 105 & 161 & 26 & 508 \\
+\hline
+\multicolumn{7}{|r||}{Total:} & 1810 \\
+\hline
+L5 & 0 & 11 & 0 & 134 & 0 & 6 & 151 \\
+\hline
+\multicolumn{7}{|r||}{Total:} & 1961 \\
+\hline
+\end{tabular}
+\caption{Languages and Tasks LOC Metrics for OCaml Implementation}
+\label{OCamlmap}
+\end{figure}
+
+Since we deal with the extending family of languages we need almost all functionality of a previous language 
+to implement the next one. The numbers in the table are \emph{incremental}, i.e. they describe how much code 
+should be added to the certain task solution for the previous language to obtain the solution for the next. 
+For example to implement T1-T3 for L2 ``on top'' of the same tasks for L1 we need 185 LOC in addition etc.
+
+Figure~\ref{OCamlarts} shows the same metrics on a per-artifact basis. The numbers here are inherited from
+the previous table. For example, A2a is exactly L3:T1 (90) + L3:T2(148) + L3:utility(1) = 239 etc.
+
+\begin{figure}
+\centering
+\begin{tabular}{|c||c|}
+\hline
+Artifacts & LOC \\
+\hline
+\hline
+A1 & 919 \\
+A2a & 239 \\
+A2b & 94 \\
+A3 & 50 \\
+A4 & 508 \\
+\hline
+\hline
+Total & 1810 \\
+\hline
+\end{tabular}
+\caption{Atrifacts LOC Metrics for OCaml Implementation}
+\label{OCamlarts}
+\end{figure}
+
+In addition to conventional atrifacts OCaml implementation supports the optional L5 language. The key difference 
+between L4 and L5 is that in the latter the nested procedure can access local variables and parameters 
+of the enclosing one while in the former it is prohibited. In the implementation we had to spend 11 LOC for a 
+different symbol table and 134 LOC more for the lambda-lifting.
+
 \subsection{Observations}
 
-\subsection{Conclusions}
+Presented approach have some merits as well as some disadvantages. The main disadvantage originates from
+the fact that actually we utilize rather imperative style of implementation. In addition the key implementation
+technique involves polymorphic variants and implicit typing. It is well known~\cite{PVReuse} that 
+programming with polymorphic variants can sometimes be tricky. When we resort to massively open types and
+their combinations this trickiness may exceed the reasonable bounds. In particular even a small
+and in fact trivial mistake in the implemetation may result in a several hundred lines long diagnostics
+from the compiler mostly consisting of the autogenerated type expressions. A sort of strict implementation
+discipline is needed to cope with this defficiency.
+
+On the other hand the careful programming results in the following advantages:
+
+\begin{enumerate}
+\item Type safety: in the presented implementation the data structures used to represent Oberon-0
+programs at the different stages of processing have different types. So the normal ``task flow'' is
+additionaly guaranteed by the instrumental compiler --- for example, it is impossible to typecheck a program
+which was not name-analyzed yet. 
+\item Modularity: presented approach allows to build a compiler from reusable separately compiled components. 
+Components can be combined in almost arbitrary way (as long as they combination still have some valid type).
+\item Expressiveness: we can always benefit from the features of a powerful general-purpose language.
+\end{enumerate}
