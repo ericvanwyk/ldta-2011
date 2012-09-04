@@ -1,14 +1,6 @@
 \section{Simpl DSL Toolkit}
 
 
-\subsection{Note}
-
-In general, the following text assumes that the artefacts and tasks
-(such as procedure lifting) are explained in the main part of the
-paper and that this section only needs to provide information about
-how a given task was solved using the tool.
-
-
 \subsection{Introduction}
 
 Simpl is a toolkit mainly targeted at implementing domain-specific
@@ -17,7 +9,7 @@ in systems that are built in a popular language (Java, C\#) using
 a framework that dictates the overall architecture of a system and
 where the DSL program is just one module in the large system. In particular,
 the ability to embed DSL programs and DSL implementations into a larger
-system is one of the main design goals of Simpl. For more thorough
+system is one of the main design goals of Simpl. For a more thorough
 analysis of technical requirements for embeddable DSL tools and review
 of existing DSL tools based on these requirements, see Freudenthal~\cite{enterprise-dsl}.
 
@@ -28,7 +20,7 @@ into a larger system. The other, ``visual'' part contains (possibly
 integrated) environment for editing and managing DSL programs. Secondly,
 the non-visual part of the DSL implementation should not make any
 assumptions on how the system is implemented. In particular, the non-visual
-part must not have dependencies to visual part and must not assume
+part must not have dependencies on the visual part and must not assume
 that the DSL implementation is a top-level program or function in
 the system.
 
@@ -37,13 +29,13 @@ providing maximal usability. The current design philosophy of Simpl
 is to reuse existing tools to minimize the amount of new tools and
 programming languages the developer must learn. For example, instead
 of developing a new language for expressing program transformations,
-Simpl relies on Scala programming language. In addition to Scala,
-Simpl builds on ANTLR parser generator \cite{antlr}, Eclipse IDE
-platform, and IDE Meta-Tooling Platform (IMP) \cite{imp}. The main
-rationale for selecting these particular tools is that they are mature,
-have good quality and are distributed under open source licences.
+Simpl relies on the programming language Scala. In addition to Scala,
+Simpl builds on the ANTLR parser generator \cite{antlr}, Eclipse
+IDE platform, and IDE Meta-Tooling Platform (IMP) \cite{imp}. The
+main rationale for selecting these particular tools is that they are
+mature, have good quality and are distributed under open source licences.
 Tools that make up the non-visual part of the DSL implementation have
-few dependencies and can be easily embedded (and can coexist with
+few dependencies and can easily be embedded (and can coexist with
 other DSL tools). From the integration point of view, the main restricting
 choice is using Eclipse as the IDE platform -- if the DSL user wants
 to use IDE developed via Simpl, she must install Eclipse. In this
@@ -59,7 +51,7 @@ Components with captions in italic are automatically generated.}
 \end{figure}
 
 
-For the DSL developer, Simpl provides parser generator, libraries
+For the DSL developer, Simpl provides a parser generator, libraries
 for pretty-printing and code generation, and an IDE framework. Figure~\ref{fig:architecture}
 shows the main components of a DSL implementation created with Simpl.
 The first part is the non-visual language implementation that can
@@ -71,8 +63,8 @@ description as input and produces a parser and the AST classes. The
 (optional) program transformation component takes as input an AST
 and checks or transforms it. The code generator converts the preprocessed
 AST to text. The second part of the DSL implementation is the language
-IDE. It builds on Simpl IDE framework and the non-visual part of the
-language implementation.
+IDE. It builds on the Simpl IDE framework and the non-visual part
+of the language implementation.
 
 
 \subsection{Scanning and Parsing}
@@ -83,18 +75,18 @@ tree (AST) of the DSL program. By default, the AST class and attribute
 names are derived from rule names. The developer can add annotations
 in the context-free grammar to modify the generated AST classes. As
 an example, Figure \ref{fig:case-statement} shows set of rules for
-parsing the Oberon0 \emph{CASE} statement. The identifiers before
-the equals signs name the attributes in the case class that is used
-for representing the AST. Figure \ref{fig:Automatically-generated-AST}
+parsing the Oberon0 \emph{CASE} statement. Identifier before an equals
+sign names the attribute in the case class that is used for representing
+the AST of the child. Figure \ref{fig:Automatically-generated-AST}
 shows the Scala case classes that were generated from the example
-rules. The attribute types are automatically derived from types of
-called rules. If an attribute refers to rule(s) that can be called
+rules. The attribute types are automatically derived from the types
+of called rules. If an attribute refers to rule(s) that can be called
 multiple times, then the type of the attribute will be a list. For
-example \emph{clauses} attribute in the \emph{CaseStatement} class
+example the \emph{clauses} attribute in the \emph{CaseStatement} class
 is typed as list because there can be more than one clause in one
 case statement. Using the same attribute name several times in a rule
 is allowed if the rule calls assigned to this attribute have compatible
-type.
+types.
 
 \begin{figure}[!h]
 {\small }
@@ -141,11 +133,11 @@ the Oberon0 \emph{CASE }statement.}
 \end{figure}
 
 
-Simpl allows modifying the generated AST classes using return expressions.
-Return expressions can specify return type of a rule and/or a Scala
-expression that is used to compute the actual AST node returned by
-the rule. In the Oberon0 implementation, return expressions were used
-to make the AST more regular and uniform. Figure \ref{fig:Using-return-expressions}
+Simpl allows the developer to modify the AST nodes by using return
+expressions. Return expressions can specify the return type of a rule
+and/or a Scala expression that is used to compute the actual AST node
+returned by the rule. In the Oberon0 implementation, return expressions
+were used to make the AST more regular and uniform. Figure \ref{fig:Using-return-expressions}
 shows two examples. The first rule ensures that the use of parentheses
 does not introduce additional wrapping of the AST nodes. The second
 rule makes all the unary expressions use a common AST class \emph{Unary(operation,~expression)}
@@ -175,9 +167,9 @@ returns manually created AST class.}
 In addition to return expressions, Simpl supports adding attributes
 and methods to AST classes. For example, the code for parsing identifiers
 is shown in Figure \ref{fig:Adding-properties}. This code modifies
-the normally generated \emph{Id} class to add attributes for storing
-references to definition of this identifier, pre-calculated constant
-values if this identifier evaluates to constant expression, and information
+the normally generated \emph{Id} class by adding attributes for storing
+reference to the definition of this identifier, pre-calculated constant
+value if this identifier evaluates to a constant, and information
 whether the identifier is a by-ref procedure parameter. These attributes
 are filled out and used during name, type checking and code generation.
 
@@ -204,13 +196,13 @@ class \emph{Id} is amended by adding properties and methods to it.}
 
 \subsection{Name Analysis}
 
-Simpl has no direct support, therefore the name analysis for the Oberon0
-language was written in Scala. The implementation is quite straightforward:
-it walks through the AST and for each identifier fills out its \emph{ref}
-attribute (points from identifier, such as variable reference, to
-declaration of this identifier. See also Figure \ref{fig:Adding-properties}).
-During the walk, we maintained an environment: a mapping from identifier
-names to declarations.
+Simpl itself has no direct support for name analysis, therefore the
+name analysis for the Oberon0 language was written in Scala. The implementation
+is quite straightforward: it walks the AST and for each identifier
+fills out its \emph{ref} attribute (points from identifier, such as
+variable reference, to declaration of this identifier. See also Figure
+\ref{fig:Adding-properties}). During the walk, we maintain an environment:
+a mapping from identifier names to declarations.
 
 
 
@@ -220,46 +212,46 @@ names to declarations.
 \subsection{Type Checking}
 
 Like name analysis, type checking was implemented in Scala. Since
-name analysis was run before type checking, there was no need to use
+name analysis is run before type checking, there is no need to use
 environments (mappings from names to types). Instead, the type checker
-first attached type information to all the declared identifiers (variables,
-constants, procedure parameters). It then propagated the type information
-to all expressions and procedure calls and checked the types of operation
-arguments and procedure call parameters.  According to task definition,
-checking for negative array sizes was also part of type checking,
-therefore the type checker computed values of all constant expressions
-and stored the values in the AST.
+first attaches type information to all the declared identifiers (variables,
+constants, procedure parameters). It then propagates the type information
+to all expressions and procedure calls and checks the types of operation
+arguments and procedure call parameters.  According to the task definition,
+checking for negative array sizes is also part of type checking, and
+thus the type checker computes values of all constant expressions
+and stores the values in the AST.
 
 
 
 
 \subsection{Source-to-Source Transformation}
 
-In order to simplify C code generation, the Simpl implementation transformed
+In order to simplify C code generation, the Simpl implementation transforms
 Oberon0 programs to simplify Oberon0 language constructs that have
 no direct equivalent in the C programming language. The first transformation
-lifted nested procedures to top level. The second transformation replaced
-\emph{CASE} statements with sequence of \emph{IF} statements.
+lifts nested procedures to top level. The second transformation replaces
+\emph{CASE} statements with a sequence of \emph{IF} statements.
 
 
 \subsubsection{\label{sub:Procedure-Lifting}Procedure Lifting}
 
-Procedure lifting used links created during the name analysis step
-and performed in-place modifications of the AST. The task was accomplished
-in three steps. First step consisted of scanning the AST and locating
+Procedure lifting uses links created during the name analysis step
+and performs in-place modifications of the AST. The task is accomplished
+in three steps. The first step consists of scanning the AST and locating
 all the nested procedures. Figure \ref{fig:Program-before-lifting}
 shows an example Oberon0 program with the inner procedure highlighted.
-In the second step, all the nested procedures were lifted to top level.
-The new name was formed by concatenating names of outer and inner
-procedures. If the concatenation did not produce an unique name, a
-number was added to the name. Figure \ref{fig:Program-during-lifting}
-shows the results of this step with the lifted procedure highlighted.
-Finally, the AST was scanned and all identifiers that referenced the
-lifted procedures were renamed to reflect the new names. Since the
-name analysis links identifiers to concrete objects (procedures, variable
-definitions, etc.), renaming of the procedures leaves the reference
-information intact. Figure \ref{fig:Program-after-lifting} shows
-the end result with the renamed identifier highlighted.
+In the second step, all the nested procedures are lifted to top level.
+The new name is formed by concatenating names of outer and inner procedures.
+If the concatenation does not produce unique name, a number is added
+to the name. Figure \ref{fig:Program-during-lifting} shows the results
+of this step with the lifted procedure highlighted. Finally, the AST
+is scanned and all identifiers that reference the lifted procedures
+are renamed to reflect the new names. Since the name analysis links
+identifiers to concrete objects (procedures, variable definitions,
+etc.), renaming of the procedures leaves the reference information
+intact. Figure \ref{fig:Program-after-lifting} shows the final result
+with the renamed identifier highlighted.
 
 \begin{figure}[!h]
 \begin{tabular}{>{\centering}p{0.33\textwidth}>{\centering}p{0.33\textwidth}>{\centering}p{0.33\textwidth}}
@@ -324,15 +316,15 @@ lifting the procedures (b), and renaming the procedure references
 \subsubsection{\label{sub:Simplifying-CASE-Statements}Simplifying \emph{CASE} Statements}
 
 The Oberon0 \emph{CASE} statement is more powerful than the \emph{switch}
-statement in C programming language as it has support for ranges.
-In order to simplify code generation, we transformed Oberon0 \emph{CASE}
-statements to series of \emph{IF}-\emph{ELSE }statements (see Figure
-\ref{fig:CASE-statement} for an example transformation). We generate
-new variable for storing the \emph{CASE} condition. Because the results
-of \emph{CASE} simplification will go straight to C code generation,
-we can optimize by not making the generated identifier \emph{gen\_1}
-a legal Oberon0 identifier. This way we do not have to ensure that
-it does not clash with any identifiers in this scope.
+statement in C as it has support for ranges. In order to simplify
+code generation, we transform Oberon0 \emph{CASE} statements to a
+series of \emph{IF}-\emph{ELSE }statements (see Figure \ref{fig:CASE-statement}
+for an example transformation). For each \emph{CASE }statement, we
+generate new variable for storing the \emph{CASE} condition. Because
+the results of \emph{CASE} simplification will go straight to C code
+generation, we can optimize by not making the generated identifier
+\emph{gen\_1} a legal Oberon0 identifier. In this way we do not have
+to ensure that it does not clash with any identifiers in this scope.
 
 \begin{figure}[!h]
 \begin{tabular}{>{\centering}p{0.35\textwidth}>{\centering}p{0.55\textwidth}}
@@ -380,17 +372,17 @@ and after transformation (b).}
 When implementing C code generation, we decided to decouple translating
 Oberon0 language constructs to C from outputting properly formatted
 C code. This allowed us to concisely express the transformation between
-Oberon0 AST to C AST without concerning the pretty-printing of C code.
-First, we created Scala case classes for expressing abstract syntax
-of the C language. Next, Oberon0 AST was transformed to C AST. Because
-the more complicated Oberon0 constructs were previously simplified
-(see the previous subsection), the translation was quite straightforward.
-In the last step, the C AST was transformed to string using pretty-printing
-library included in Simpl (it is based on Philip Wadler's Haskell
-library~\cite{wadler-prettyprinter}).
+the\emph{ }Oberon0 AST to a C AST without concerning ourselves with
+pretty-printing of C code. First, we created Scala case classes for
+expressing the abstract syntax of C. Next, the Oberon0 AST was transformed
+to a C AST. Because the more complicated Oberon0 constructs were previously
+simplified (see the previous subsection), the translation was quite
+straightforward. In the last step, the C AST was transformed to a
+string using the pretty-printing library included in Simpl (it is
+based on Philip Wadler's Haskell library~\cite{wadler-prettyprinter}).
 
 Figure \ref{fig:code-generation} illustrates the code generation
-process with an example procedure for calculating factorial. Since
+process with an example procedure for calculating factorials. Since
 Oberon0 has no functions, the result is returned in a \emph{VAR} parameter.
 Whereas AST of the Oberon0 \emph{FOR} statement (see Figure \ref{fig:code-generation}b)
 corresponds to Oberon0 syntax, the translated \emph{for} statement
@@ -490,12 +482,12 @@ The Oberon0 implementation is composed of five different artifacts
 (A1, A2a, A2b, A3, A4). Each artifact either adds additional constructs
 to the language or adds additional features, such as type checking,
 procedure lifting or code generation. Table \ref{tab:loc-statistics}
-shows code sizes for different artifacts and tasks. Code size is measured
-in lines of code; empty lines and comments were not counted. For counting
-lines of code, we used program \emph{cloc}%
+shows the code sizes for the various artifacts and tasks. Code size
+is measured in lines of code; empty lines and comments were not counted.
+For counting lines of code, we used the program \emph{cloc}%
 \footnote{see \url{http://cloc.sourceforge.net/}%
 } that was extended with support for Simpl grammar files. In the table,
-each row represents size of a particular component:
+each row represents the size of a particular component:
 \begin{itemize}
 \item Parse -- Simpl grammar file and any additional Scala code (such as
 custom classes for expressing binary operators and checks that numerical
@@ -541,10 +533,10 @@ A4 & 48 & 44 & 89 & 72 & 463 & 198 & 39 & \textbf{953}\tabularnewline
 
 Except for A1, the artifacts are not self-contained in the terms of
 code. The artifacts reuse grammar files and Scala code. Figure \ref{fig:artifact-dependencies}
-shows the dependency graph between artifacts. The grammar files are
-reused by using include directive. For example, L3 grammar includes
+shows the dependency graph between the artifacts. The grammar files
+are reused by using include directives. For example, L3 grammar includes
 L2 grammar and overwrites production rules for declarations (by adding
-procedure declaration) and statements (by adding procedure calls).
+procedure declarations) and statements (by adding procedure calls).
 Services written in Scala, such as name analysis and type checking,
 were extended using inheritance. In general, the extension consisted
 in overriding \emph{processStatement}, \emph{processExpr} etc. methods
@@ -562,7 +554,7 @@ the Oberon0 implementation.}
 
 
 In addition to artifacts mandated in the challenge, we used Simpl
-to implement basic IDE for the Oberon0 language (see Figure \ref{fig:Screenshot-of-Oberon0}
+to implement a basic IDE for the Oberon0 language (see Figure \ref{fig:Screenshot-of-Oberon0}
 for example screenshot). The IDE provided syntax highlighting, error
 highlighting, outline view, hyperlinking, code folding, and occurrence
 marking. The total code size for the IDE module was 106 lines, some
@@ -589,31 +581,30 @@ the focus is on domain-specific languages and quite simple code generators.
 Therefore, Simpl provided direct support for a subset of all the tasks
 contained in this challenge. In particular, we used Simpl to create
 a parser and class model for expressing AST of Oberon0 programs, and
-for pretty-printing the AST. Although not included in challenge task,
+for pretty-printing the AST. Although not included in the challenge,
 we also used Simpl to create an IDE for the Oberon0 language.
 
 Simpl currently uses ANTLR as a parser backend and therefore inherits
-the use of \emph{LL(k)} parsing algorithm. The \emph{LL(k)} algorithm
-has trouble expressing left-recursive grammar rules and thus parsing
-left-associative operators. This limitation means that operator precedence
-must be encoded in grammar rules%
+the use of the \emph{LL(k)} parsing algorithm. The \emph{LL(k)} algorithm
+has difficulties expressing left-recursive grammar rules and thus
+parsing left-associative operators. This limitation means that operator
+precedence must be encoded in grammar rules%
 \footnote{In this challenge the grammar was already specified in this form.%
 } and it also results in cumbersome AST. The cumbersome AST can be
-worked around by using return expressions that shape the AST nodes
-returned by the grammar rules. In the future, we plan to use parser
+worked around by using return expressions that reshape the AST nodes
+returned by the grammar rules. In the future, we plan to use a parser
 backend that does not have this restriction.
 
-Simpl grammar system is not specifically targeted at implementing
+The Simpl grammar system is not specifically targeted at implementing
 modular grammars. It only supports simple inclusion mechanism with
-the ability to overwrite rules in the included grammars. In the challenge
-exercise, this introduced minor code duplication. For example, in
-order to introduce new kind of statement, one has to repeat the \emph{Statement}
-rule with all the other preexisting statements. Overall, for the modularity
-features were adequate for the current situation where there were
-language levels with increasing complexity and each following level
-added new constructs to the language. However, if the task were to
-require highly modular grammars, then the current modularity features
-likely would not have sufficed.
+the ability to overwrite rules in the included grammars. In the challenge,
+this introduced minor code duplication. For example, in order to introduce
+a new kind of statement, one has to repeat the \emph{Statement} rule
+with all the other preexisting statements. Overall, the modularity
+features were adequate for the current situation where we were dealing
+with language levels with increasing complexity and each following
+level only extended the language. However, for more complicated situations
+the current modularity features likely would not have sufficed.
 
 
 \subsection{Conclusions}
@@ -622,8 +613,8 @@ In general, implementing the challenge with Simpl was a straightforward
 exercise. The grammar description was legible and the automatically
 generated AST classes worked well with processing code written in
 Scala. Simpl does not have support for implementing program checkers
-and program tranformation, therefore these functions were written
-in straight Scala. In addition to required tasks, we implemented an
-IDE for Oberon0. The IDE was based on challenge code and required
-minimal amount of effort to create.
+and program transformations, therefore these functions were written
+in straight Scala. In addition to the required tasks, we implemented
+an IDE for Oberon0. The IDE was based on the code of the challenge
+tasks and required a minimal amount of effort to create.
 
