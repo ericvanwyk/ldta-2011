@@ -6,10 +6,10 @@
 % todo: use rascal.sty
 \def\rcode#1{\texttt{#1}}
 
-\subsection{Introduction}
+%\subsection{Introduction}
 
 \noindent \Rascal is a domain-specific language for
-meta-programming. It has been designed to deal with software languages
+meta-programming~\cite{rascal,RascalLWC11}. It has been designed to deal with software languages
 in the broadest sense of the word. Its application areas include the
 development of DSLs, reverse engineering and reengineering of (legacy)
 software systems and software repository mining. \Rascal features
@@ -17,29 +17,23 @@ powerful domain-specific language constructs to make meta programming
 more effective:
 \begin{itemize}
 \item Integrated syntax definition: context-free grammars can be
-  declared as part of ordinary \Rascal code; the parse trees defined
+  declared as part of ordinary \Rascal code; the concrete syntax trees defined
   by such grammars are first-class values, and non-terminals are
   first-class types.
 \item Built-in data types: apart from the standard data types (int,
   bool, string etc.), \Rascal supports sets, relations, maps, lists,
-  algebraic data types (ADTs), parse trees, and source
+  algebraic data types (ADTs), concrete syntax trees, and source
   locations. Every value in Rascal can be used in pattern
   matching. This includes concrete syntax trees produced by \Rascal's
   grammar.
 \item Constructs for analysis and transformation: sets, relations,
-  maps and lists can be used in comprehensions. The visit-statements
-  allows for structur-shy traversal and rewriting of abstract or
+  maps and lists can be used in comprehensions. The visit-statement
+  allows for strategic traversal and rewriting of abstract or
   concrete syntax trees.
 \end{itemize}
-\Rascal is \textit{programming language}; it eschews implicit
-features. The language design is informed by learnability and
-debuggability considerations. This means there is little ``magic'' in
-\Rascal. For instance, control-flow is completely straightforward,
-unlike, for instance, in languages based on attribute evaluation or
-term rewriting~\cite{...}. \Rascal adheres to the
-what-you-see-is-what-you-get (WYSIWYG) principle.
+We have aimed to make Rascal easy to learn and debug by adhering to well-known C/Java/C\#-like syntax and familiar programming idioms (mostly standard and explicit control-flow, functional programming, and pattern-matching).
 
-\subsubsection{Overview of the \Rascal \oberon implementation}
+\subsection{Overview of the \Rascal \oberon implementation}
 
 \noindent \Rascal allows computer languages to be implemented in a modular
 fashion, through the simultaneous extension of syntax definition
@@ -50,22 +44,25 @@ overview of the architecture is shown in Table~\ref{TBL:rascalArch}.
 
 \begin{table}
 \begin{center}\small
-\begin{tabular}{|l||l|l|l|}\hline
-   &  Syntax & Data Type & Function \\\hline\hline
+\begin{tabular}{|l||l|l|l|r|}\hline
+   &  Syntax & Data Type & Function & SLOC \\\hline\hline
 L1 &  \textbf{grammar} & \textbf{AST}, \textbf{scope} & 
-\textbf{bind}, \textbf{check}, \textbf{format}, \textbf{compile} \\\hline 
-L2 & +grammar & +AST & +bind, +check, +format, \textbf{desugar} \\\hline
-L3 & +grammar & +AST, +scope & +bind, +check, +format, +compile, \textbf{lift} \\\hline
-L4 & +grammar & +AST & +bind, +check, +format, +compile \\\hline
+\textbf{bind}, \textbf{check}, \textbf{format}, \textbf{compile} & 612 \\\hline 
+L2 & grammar & AST & bind, check, format, \textbf{desugar} & 189 \\\hline
+L3 & grammar & AST, scope & bind, check, format, compile, \textbf{lift} & 335\\\hline
+L4 & grammar & AST & bind, check, format, compile & 258 \\\hline\hline
+\multicolumn{4}{|r|}{\textit{Total:}} & 1394 \\\hline
 \end{tabular}
 \end{center}
 \caption{Layered architecture of the \Rascal \oberon implementation;
-  ``+'' indicates extension, \textbf{bold} indicates introduction.\label{TBL:rascalArch}}
+  up-right font indicates extension, \textbf{bold} indicates introduction. SLOC excludes empty and commented lines.\label{TBL:rascalArch}}
 \end{table}
 
-The table show three columns, corresponding to syntax definition,
-(algebraic) data types and functions. Each row corresponds to a
-language level. Level L1 represents the base case: all relevant
+The table show four columns, corresponding to syntax definition,
+(algebraic) data types and functions; the last column shows the number of source-lines of code (SLOC) required to implement the component on a row.  Each row corresponds to a
+language level. The function \irascal{bind} implements name analysis, \irascal{check} implements type checking, \irascal{format} implements pretty printing and \irascal{compile} realizes code generation to C. Furthremore, the auxiliar functions \irascal{desugar} and \irascal{lift} represent semantics preserving source-to-source transformations on \oberon to deal with the L2 constructs and to simplify compilation respectively. 
+
+Level L1 represents the base case: all relevant
 syntax, data types and functions are introduced here. In the
 subsequent levels any of these types and functions may have to be
 extended. For instance, in L2, where the FOR and CASE statements are
@@ -82,12 +79,12 @@ Extension in \Rascal works through the \texttt{extend} construct. This
 constructs works similar to module import, except that it allows the
 extension of recursively defined abstractions, in this case ADTs and
 functions. This leads to a mechanism similar to inheritance in
-object-oriented languages~\cite{Cook?}.  For grammars and ADTs the
+object-oriented languages. For grammars and ADTs the
 definitions of the extended module and the extending module are simply
 merged. Function extension, on the other hand, depends on a particular
 style of writing \Rascal functions, in a way similar to term rewriting
-rules. An example may illustrate the approach. For instance the
-following rule implements the \texttt{check} function for
+rules. Consider, for instance, the
+following rule implementing the \texttt{check} function for
 type-checking WHILE statements:
 \begin{quote}
 \begin{rascal}
@@ -95,68 +92,46 @@ set[Message] check(whileDo(c, b)) =
                  checkCond(c) + checkBody(b);
 \end{rascal}
 \end{quote}
-It looks like an ordinary \Rascal function definition except that it
-uses ``= $\langle$\textit{Expression}$\rangle$'' instead of a regular
-function body using $\{\}$. Moreover, the function uses pattern
+Normal Rascal functions have a body consisting of zero or more statements  enclosed in curly braces. However, if the result is a single expression, a function can be written in this shorter notation. The function uses pattern
 matching in its signature to dispatch on the WHILE AST constructor;
 this style of function definition hence is called
-\textit{pattern-based dispatch}.  The complete implementation of the
-\texttt{check} function consists of multiple such rules, one for each
+\textit{pattern-based dispatch}. The complete implementation of the
+\irascal{check} function consists of multiple such rules, one for each
 AST constructor. Such rules may be distributed over different modules
 to obtain extensibility. For instance, in L3 where procedure
-definitions and procedure calls are introduced, the \texttt{check}
+definitions and procedure calls are introduced, the \irascal{check}
 function is extended by adding an implementation rule dispatching on
 the AST constructor for procedure calls. In the \oberon implementation
-\texttt{bind}, \texttt{check}, \texttt{format}, and \texttt{compile}
-are modularized using pattern-based dispatch.
+\irascal{bind}, \irascal{check}, \irascal{format}, and \irascal{compile}
+are all modularized using pattern-based dispatch.
 
 For syntax and abstract syntax the mechanism is similar. In higher
-layers (i.e., L2, L3, and L4), extension modules add alternatives to
-both grammars and ADTs. Note that for grammars this requires a general
-parsing algorithm, since only the full class of context-free languages
-is closed under union~\cite{?}. In L3 this mechanism is used to extend
-the scope data type to deal with nested scopes. In L1 this data type
-is defined as follows:
-\begin{quote}
-\begin{rascal}
-data NEnv = scope(map[Ident, Decl] env);
-\end{rascal}
-\end{quote}
-In other words the the name environment consists of a plain map from
-identifiers to declarations. By wrapping this map in an ADT
-constructor, the type \texttt{NEnv} becomes extensible. In L3 it is
-extended as follows:
-\begin{quote}
-\begin{rascal}
-data NEnv = nest(map[Ident, Decl] env, NEnv parent);
-\end{rascal}
-\end{quote}
-The new alternative (\texttt{nest}) also consists of a
-name-declaration map, but also has an additional parent
-\texttt{NEnv}. 
+layers (i.e. L2, L3, and L4), extension modules add alternatives to
+both grammars and ADTs. In L3 this mechanism is also used to extend
+the symbol table data type to deal with nested scopes. 
 
 \subsection{Scanning and parsing}
 
-\noindent \Rascal's syntax definitions are backed by a scannerless, general
-parsing algorithm based GLL~\cite{JohnstoneScott11}. Scannerless
+\noindent \Rascal's syntax definitions are backed by a scannerless variant of the GLL parsing algorithm~\cite{GLL}. Scannerless
 parsing solves the problem of modular lexical syntax. To deal with
 (lexical) ambiguities, \Rascal has built-in support for longest-match
 and keyword reservation. Consequently, each language level may
 introduce additional reserved keywords, that are not reserved in
 previous levels. For instance, the ``FOR'' keyword, introduced in L2,
-is not reserved in L1
+is not reserved in L1.
 
 Grammars are annotated with constructor names to obtain automatic
-mapping of parse trees to ASTs. The \Rascal standard library function,
-\texttt{implode}, converts and concrete syntax tree into an AST, given
+mapping of concrete syntax trees to ASTs. The \Rascal standard library function,
+\texttt{implode}, converts a concrete syntax tree into an AST, given
 an ADT definition of the abstract syntax. Implode uses the
 \textit{reified ADT} as a recipe. Reified types are reflective value
 representations of \Rascal types. The information in the reified type
-is used by implode to decide how an concrete tree must be mapped to an
-AST. For instance, some lexical parse tree nodes are mapped to
+is used by implode to decide how a concrete tree must be mapped to an
+AST. For instance, some lexical concrete syntax nodes are mapped to
 (native) integers if this is dictated by the abstract syntax ADT.
 
-The statement syntax of \oberon L1 is defined as follows:
+The statement syntax of \oberon L1 is defined using the grammar shown in Listing~\ref{LST:rascal-concrete-Statement}.
+\begin{listing}
 \begin{quote}
 \begin{rascal}
 syntax Statement 
@@ -167,9 +142,13 @@ syntax Statement
   | skip: ;
 \end{rascal}
 \end{quote}
+\caption{Concrete syntax definition of \oberon statements in L1}
+\label{LST:rascal-concrete-Statement}
+\end{listing}
 Each alternative is labeled with a constructor name that corresponds
 to a constructor in the abstract syntax, which (for statements) is
-defined as follows:
+defined as shown in Listing~\ref{LST:rascal-abstract-Statement}.
+\begin{listing}
 \begin{quote}
 \begin{rascal}
 data Statement 
@@ -181,16 +160,20 @@ data Statement
   ;
 \end{rascal}
 \end{quote}
+\caption{Abstract syntax definition of \oberon statements in L1}
+\label{LST:rascal-abstract-Statement}
+\end{listing}
 In the abstract syntax ordinary \Rascal lists are used for regular
-operators.  The \Rascal parser annotates parse trees with source
-locations (a native datatype in Rascal). The implode propagates these
+operators.  The \Rascal parser annotates concrete syntax trees with source
+locations (a native datatype in Rascal). The implode function propagates these
 locations to the AST so that meaningful error messages can be given
 during later processing.
 
 Scannerless means that there is no separate tokenization phase: both
 lexical and context-free syntax are described using the same grammar
 formalism. This makes it, for instance, trivially easy to support
-\oberon's nested comments:
+\oberon's nested comments, the grammar for which is shown in Listing~\ref{LST:rascal-Comment}.
+\begin{listing}
 \begin{quote}
 \begin{rascal}
 lexical Comment = "(*" CommentElt* "*)" ;
@@ -198,22 +181,26 @@ lexical CommentElt = CommentChar+ | Comment ;
 lexical CommentChar = ![*(] | [*] !>> [)] | [(] !>> [*];
 \end{rascal}
 \end{quote}
+\caption{Grammar describing \oberon's nested comments}
+\label{LST:rascal-Comment}
+\end{listing}
 In essence, this is just context-free syntax, except the
 \texttt{lexical} keyword indicates that no layout is allowed between
-symbols. The CommentChar non-terminal captures all characters except
+symbols. The \irascal{CommentChar} non-terminal captures all characters except
 ``*'' and ``('', and uses follow restrictions (``\texttt{!>>}'') to
 allow both ``*'' and ``('' if they are not followed by ``)'' and ``*''
 respectively.
 
-\subsubsection{Formatting}
+\subsection{Formatting}
 
 \noindent Formatting in \Rascal consists of mapping (abstract) syntax
-trees to Box constructs~\cite{Box}. The resulting Box expressions
+trees to Box constructs~\cite{BV96}. The resulting Box expressions
 describes how elements should be layed out, e.g., horizontally,
 vertically, indented or aligned, which font-style to use, and how
 adjacent elements should be spaced relative to one another.
 
-As an example, consider the formatting of the WHILE statement:
+As an example, consider the formatting of the WHILE statement in Listing~\ref{LST:rascal-stat2box-while}.
+\begin{listing}
 \begin{quote}
 \begin{rascal}
 Box stat2box(whileDo(c, b)) = V([
@@ -223,6 +210,9 @@ Box stat2box(whileDo(c, b)) = V([
 ]);  
 \end{rascal} 
 \end{quote}
+\caption{Formatting WHILE-statements}
+\label{LST:rascal-stat2box-while}
+\end{listing}
 Again this function uses pattern-based dispatch to match the AST
 constructor for WHILE statements. The result of the function is a Box
 expression (which is just an ADT in \Rascal). The result dictates that
@@ -234,8 +224,8 @@ The body \irascal{b} of the WHILE statement should be indented one
 level (I), and the statements should be placed vertically. The helper
 function \irascal{hsepList} is used to correctly combine separated
 lists where the separator (``;'') should be horizontally combined with
-an element; it is parameterized by the a function to convert each
-element of the list to a Box expression (i.c., \irascal{stat2box}).
+an element; it is parameterized by a function to convert each
+element of the list to a Box expression (i.e. \irascal{stat2box}).
 Finally, the three sub-boxes are wrapped in a V box so that the
 header, body and END keyword are placed vertically.
 
@@ -244,7 +234,7 @@ parentheses in binary expressions according to the precedence and
 associativity rules of the grammar. In \Rascal this can be solved
 using reified types. Above, we described how \irascal{implode} used
 the reified type of the abstract syntax ADT to guide the mapping of
-parse trees to ASTs. In this case we proceed the other way around: we
+concrete syntax trees to ASTs. In this case we proceed the other way around: we
 use the reified type of the \textit{grammar} to obtain precedence and
 associativity information. Since all non-terminals are first-class
 types in \Rascal, obtaining the reified type of a non-terminal gives
@@ -286,7 +276,7 @@ horizontally wraps the argument with parentheses.
 \noindent Name analysis consists of a traversal of the AST that does
 two things at the same time:
 \begin{enumerate}
-\item Annotate use sites of variables, types and constants with the
+\item Annotate use sites of variables, types and constants with
   their declarations.
 \item Maintain a set of error messages, indicating problems such as
   undeclared identifiers. 
@@ -309,8 +299,9 @@ alias Bound[&T] = tuple[&T ast, set[Message] errs];
 \end{rascal}
 \end{quote}
 
-As an example, consider the binding of the IF-statement, which is
-shown below:
+As an example, consider the binding of the IF-statement, 
+shown in Listing~\ref{LST:rascal-bindStat}.
+\begin{listing}
 \begin{quote}\small
 \begin{rascal}
 Bound[Statement] bindStat(s:ifThen(c, b, eis, e), 
@@ -327,6 +318,9 @@ Bound[Statement] bindStat(s:ifThen(c, b, eis, e),
 }
 \end{rascal}
 \end{quote}
+\caption{Binding analysis of the \oberon IF-statement}
+\label{LST:rascal-bindStat}
+\end{listing}
 The function heavily uses \Rascal's destructuring assignment to
 simultaneously replace parts of the AST and update the \irascal{errs}
 variable. For instance, the first statements invokes \irascal{bindExp}
@@ -339,8 +333,9 @@ of ELSIF's while at the same time (possibly) updating the set
 \irascal{errs}. The final result is the annotated IF-node
 (\irascal{s}) together with the \irascal{errs}.
 
-The annotation of identifiers is implemented using the following
-function: 
+The annotation of identifiers is implemented using the
+function in Listing~\ref{LST:rascal-bindId}.
+\begin{listing}
 \begin{quote}\small
 \begin{rascal}
 Bound[Ident] bindId(Ident x, NEnv nenv, set[Message] errs) {
@@ -352,10 +347,13 @@ Bound[Ident] bindId(Ident x, NEnv nenv, set[Message] errs) {
 }
 \end{rascal}
 \end{quote}
+\caption{Binding analysis for identifiers}
+\label{LST:rascal-bindId}
+\end{listing}
 This function checks the name environment (\irascal{nenv}) if the
 identifier \irascal{x} is currently visible. If so, then the
 \irascal{x} is annotated with its definition
-(\texttt{x[@decl=...]}). Otherwise, if \irascal{x} represents that
+(\texttt{x[@decl=...]}). Otherwise, if \irascal{x} represents any of the
 boolean constants TRUE or FALSE, it is annotated accordingly. If none
 of the above holds, the identifier is undeclared and an error is
 produced, containing the source location of \irascal{x}.
@@ -369,7 +367,8 @@ further information; all required annotations are assumed to be set
 during name analysis. This simplifies type checking considerably,
 since all required information is local to a certain AST node.
 
-As an example, consider the following code to check procedure calls:
+As an example, consider the code to check procedure calls in Listing~\ref{LST:rascal-check}.
+\begin{listing}
 \begin{quote}
 \begin{rascal}
 set[Message] check(s:call(f, as)) {
@@ -386,9 +385,12 @@ set[Message] check(s:call(f, as)) {
 }
 \end{rascal}
 \end{quote}
+\caption{Checking \oberon procedure calls}
+\label{LST:rascal-check}
+\end{listing}
 First the declaration of the called procedure is retrieved in order to
 check whether \irascal{f} actually represents a procedure. If not, an
-error is returned. Second, list of formal parameters is obtained from
+error is returned. Second, the list of formal parameters is obtained from
 the \irascal{decl} annotations and the arity of the procedure is
 checked. Third, now we can assume that the number of actual parameters
 is correct, each argument is checked against its corresponding formal
@@ -404,25 +406,26 @@ of data structures using the \rcode{visit} statement. Visit works like
 a traditional case statement, only cases are matched at arbitrary
 depth in a data structure. There are 6 builtin strategies to control
 the traversal order. Visited nodes maybe replaced, thereby rewriting
-the tree, similar to traversal rules in \cite{ASF+SDF} and rewrite
-strategies in \cite{Stratego}.
+the tree, similar to traversal rules \textsc{Asf+Sdf}~\cite{Traversals} and rewrite
+strategies in \cite{Visser04}.
 
 
 The desugaring of FOR-loops and CASE-statements both heavily depend on
 the visit-statement. For instance, the desugaring of the
 for-statements introduced in L2 is shown in
-Listing~\cite{LST:for2while}. The function \irascal{for2while} visits
+Listing~\ref{LST:for2while}. The function \irascal{for2while} visits
 a list of statements. First FOR-loops without a BY-clause are
 normalized to have a BY-clause of 1 (\irascal{nat(1)}). Second, if a
 BY-clause uses a symbolic constant, it is replaced with the integer
-the constant evaluates to. Then, in the thrid and fourth case,
+the constant evaluates to. Then, in the third and fourth case,
 FOR-loops are substituted for equivalent L1 \oberon nodes. Since a
 single FOR-loop is desugared to a sequence of statements, we use a
 temporary AST constructor, \irascal{begin}, to allow inserting
 multiple statements in place of one. The \irascal{begin} nodes are
-spliced into their surrounding context in a later phase. Note that the
-use of the \rcode{innermost} keyword ensures that FOR-loops are first
-normalized and only after that will be eventually desugared.
+spliced into their surrounding context in a later phase. 
+%Note that the
+%use of the \rcode{innermost} keyword ensures that FOR-loops are first
+%normalized and only after that will they be eventually desugared.
 
 \begin{listing}[t]
 \begin{quote}
@@ -452,61 +455,11 @@ implemented in a similar way.
 
 \subsection{Code generation}
 
+\noindent Code generation to C works in two phases. The first phase consists of a source-to-source transformation on \oberon to make all identifiers unique and to move all (nested) procedures to top level. The second phase unparses such normalized \oberon programs to flat C code.
 
-\subsubsection{Unique names}
+%Flattening \oberon programs heavily uses Rascal's support for tree %traversal using the \texttt{visit} statement.....
 
-\noindent To ensure that there will be no name collisions after
-procedures, types and constants are lifted, identifiers referring to
-such entities are first ``uniqified''. For names in declarations, the
-source location's offset is used to make the name unique\footnote{This
-  trivially gives uniqueness, since no two identifiers can occupy the
-  same offset in a source file.}. To rename use sites of
-identifiers, the location of its declaration is obtained from the
-name-binding \irascal{decl} annotation.
-
-The \irascal{rename} function is implementation is shown below:
-\begin{quote}
-\begin{rascal}
-Module rename(Module m, NEnv global) {
-  return visit (m) {
-    case constDecl(x, e) => constDecl(prime(x), e)
-    case typeDecl(x, t) => typeDecl(prime(x), t)
-    case proc(x, fs, ds, b, f2) => proc(prime(x), fs, ds, b, f2)
-    case call(x, as) => call(prime(x, l)
-       when proc(l, _) := x@decl, !isDefined(global, x)
-    case user(x) => user(prime(x, l))
-      when \type(l, _) := x@decl
-    case lookup(x) => Lookup(prime(x, l))
-      when const(l, _) := x@decl
-  };
-}
-\end{rascal}
-\end{quote}
-The \irascal{rename} performs a single traversal over the AST and
-inserts \irascal{prime}d names into declarations and use sites. For
-the use sites the locations of and identifiers declaration is used.
-
-\subsubsection{Lifting procedures}
-
-\noindent Standard C does not support nested functions. To simplify
-the code generation, \oberon procedures are first lifted to the
-top-level. Below is the function that lifts nested procedures and
-produces a flat list of procedure declarations:
-\begin{quote}
-\begin{rascal}
-public list[Procedure] liftProc(Procedure proc) {
-  newProcs = ( [] | it + liftProc(p) | p <- proc.decls.procs );
-  proc.decls.procs = [];
-  return newProcs + [proc];
-}
-\end{rascal}
-\end{quote}
-...
-A similar procedure is applied for type and constant declarations. 
-
-\subsubsection{Generating C-code}
-
-\noindent Although it would have been possible to define an abstract
+Although it would have been possible to define an abstract
 syntax for C and then use \Rascal's Box formatting to obtain a textual
 representation suitable for compiling to machine code, we have instead
 opted for a simpler, more pragmatic approach using string
@@ -515,8 +468,9 @@ expressions, conditional statements (if) and loops (for, while,
 do-while). This makes string templates very convenient for generating
 code. Moreover, using the explicit margin markers (single quote '),
 such templates are convenient to write and the result will be
-automatically indented. For instance, consider the code to generate
-code for WHILE loops and IF statements a C while-loop:
+automatically indented. For instance, Listing~\ref{LST:rascal-stat2c} shows the code to generate
+code for WHILE loops and IF statements a C while-loop.
+\begin{listing}
 \begin{quote}
 \begin{rascal}
 str stat2c(whileDo(c, b)) = "while (<exp2c(c)>) {
@@ -536,6 +490,9 @@ str stat2c(ifThen(c, b, ei, ep)) =
                             '}<}>";
 \end{rascal}
 \end{quote}
+\caption{Using auto-indenting string templates to generate C-code}
+\label{LST:rascal-stat2c}
+\end{listing}
 In both string templates the statements within statement blocks will
 be indented relative to the margin. All whitespace to the left of the
 margin is discarded.
