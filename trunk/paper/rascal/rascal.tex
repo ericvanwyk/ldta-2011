@@ -44,18 +44,18 @@ overview of the architecture is shown in Table~\ref{TBL:rascalArch}.
 
 \begin{table}
 \begin{center}\small
-\begin{tabular}{|l||l|l|l|r|}\hline
-   &  Syntax & Data Type & Function & SLOC \\\hline\hline
+\begin{tabular}{|l||l|l|l|}\hline
+   &  Syntax & Data Type & Function \\\hline\hline
 L1 &  \textbf{grammar} & \textbf{AST}, \textbf{scope} & 
-\textbf{bind}, \textbf{check}, \textbf{format}, \textbf{compile} & 612 \\\hline 
-L2 & grammar & AST & bind, check, format, \textbf{desugar} & 189 \\\hline
-L3 & grammar & AST, scope & bind, check, format, compile, \textbf{lift} & 335\\\hline
-L4 & grammar & AST & bind, check, format, compile & 258 \\\hline\hline
-\multicolumn{4}{|r|}{\textit{Total:}} & 1394 \\\hline
+\textbf{bind}, \textbf{check}, \textbf{format}, \textbf{compile} \\\hline 
+L2 & grammar & AST & bind, check, format, \textbf{desugar} \\\hline
+L3 & grammar & AST, scope & bind, check, format, compile, \textbf{lift} \\\hline
+L4 & grammar & AST & bind, check, format, compile\\\hline%\hline
+%\multicolumn{4}{|r|}{\textit{Total:}} & 1394 \\\hline
 \end{tabular}
 \end{center}
 \caption{Layered architecture of the \Rascal \oberon implementation;
-  up-right font indicates extension, \textbf{bold} indicates introduction. SLOC excludes empty and commented lines.\label{TBL:rascalArch}}
+  up-right font indicates extension, \textbf{bold} indicates introduction.\label{TBL:rascalArch}}
 \end{table}
 
 The table show four columns, corresponding to syntax definition,
@@ -501,42 +501,63 @@ margin is discarded.
 % combination of tasks and sublanguages
 \subsection{Artifacts}
 
-\subsection{Observations}
 
-Not yet good enough:
-- Modularity: not there yet completely; overriding + super
-  Example: in L4 the AST nodes for assign/lookup change. This means we
-  either have to normalize old AST nodes to new ones and duplicate
-  code. Would like to add functionality for the new constructors
-  only. (Hmm). Defaults, and explicit extension hooks. :-(
+\begin{table}
+\begin{center}\small
+\begin{tabular}{|l||r|r|r|r|r||r|}\hline
+      & \multicolumn{1}{c|}{T1:} 
+      & \multicolumn{1}{c|}{T2:} 
+      & \multicolumn{1}{c|}{T3:} 
+      & \multicolumn{1}{c|}{T4:} 
+      & \multicolumn{1}{c||}{T5:} & \multirow{2}{*}{Total}
+       \\
+  & parse/pp & bind & check & desugar & compile &
+       \\\hline\hline
+L1  &    244 & 162 & 146 &-- &   60 &  612   \\\hline
+L2  &    80  & 44  & 26 & 39 &  --  &  189   \\\hline
+L3  &    73  & 117 & 39 & -- &  106 &  335   \\\hline
+L4  &    90  & 67  & 53 & -- & 48   &  258   \\\hline\hline
+Total & 487  & 390 & 264 & 39 & 214 & 1394 \\\hline 
+\end{tabular}
+\end{center}
+\caption{Overview of the structure and size (\#SLOC) of the Rascal implementation of each task for each language level.}
+\label{TBL:rascalArtifacts}
+\end{table}
 
-- abstract interpretations (binding/checking); manually thread
-environments, and reconstruct tree + errors in return value
-tuple. Moreover, must be very careful, not to accidentally discard
-location information: e.g. bind(assign(x, e)) = assign(bind(x),
-bind(e)) does not work.  Dynamic variables for the set of error
-messages. Why not visit for annotation? 1) it is hard to know in
-advance whether our builtin strategies are right for the task, 2)
-currently, it is not extensible. Down-up strategy?
+\noindent The Rascal \oberon implementation consists of the modular implementation of each task for each language level (when appropriate). An overview is shown in Table~\ref{TBL:rascalArtifacts}. Task T1 includes the code for the grammar, AST data type, pretty printing rules and AST normalization. The code for T2 consists of the scope data type and the \irascal{bind} function. T3 is covered by the \irascal{check} function. T4 only applies to L2 and performs the desugaring of FOR and CASE statements. Finally, the code for compilation to C (T5) includes functions for lifting nested procedures and renaming identifier. 
 
-- Formatting:
-essentially a fold. Cannot use visit: type preserving. Need support
-for catamorphisms + defaults.
+The columns in Table~\ref{TBL:rascalArtifacts} capture functional dependency. For instance, T3 (checking) requires that name analysis has been applied to the AST. The horizontal dimension indicates extension: each higher level (lower in the table) extends the previous level. The extension applies to both grammars, algebraic data types, and functions. 
 
 
-The essence of folds: name analysis, type checking, pretty printing,
-and code generation all have been manually implemented as recursive
-folds over ASTs. Caveat: depends on language if this is possible; for
-\oberon it works well.
+%     T1: parse/format &  T2: bind & T3: check  & T4: desugar & T5: compile \\
+% L1    x   &         &   x   &       &   
+% L2    x   &   x     &   x   &       &    
+%A2a
+% L3    x   &   x     &   x   &       &
+%A2b    
+% L1    x   &   x     &   x   &   x   &
+% L2    x   &         &   x   &   x  &     
 
-
-Good:
-
-- IDE support
-- Grammar formalism
-- flexibility
-- auto-indenting string templates
-- pattern-based dispatch good for modularity
-- transformation
 
 \subsection{Conclusions}
+
+\noindent The experience developing \oberon in Rascal has been generally positive. Nevertheless, there are some areas where we think Rascal could still be improved. Below we discuss what we think contributed to our positive experience and identify three areas where Rascal could be better.
+
+Rascal's grammar formalism is very powerful and expressive. As a result the grammar can be written with an eye to the desired abstract syntax: essentially the grammar does not have to be factored in awkward ways to satisfy the parser.
+
+Although tool support for Rascal is currently in an early stage, the Eclipse-based IDE, read-eval-print-loop (REPL) and built-in testing framework are very helpful in developing and debugging language implementations. Furthermore, Rascal includes the tools \textsc{AmbiDexter}~\cite{AmbiDexter} and \textsc{DrAmbiguity}~\cite{DrAmbiguity} for (conservatively) checking (non-)ambiguity, and for diagnosing ambiguous parse forests respectively. These tools have been instrumental in creating correct grammars for \oberon. In fact, \textsc{AmbiDexter} was able to establish that our grammar of \oberon is unambiguous.
+
+Although the AST could easily be automatically derived from concrete syntax trees, the current scheme of using the abstract ADT as a recipe to guide the ``implosion'' process allows additional flexibility.  This allows, for instance, the implosion of lexical tokens (identifiers, integers etc.) to different Rascal primitive types. It also supports skipping over irrelevant chain rules (injections) and flattening of nested lists. 
+
+The feature that makes this kind of guided implosion work, is that Rascal types can be inspected at runtime. This was also essential for letting the pretty printer insert parentheses if and when expressions needed them. Since a Rascal grammar defines a proper type, we could inspect the \oberon grammar itself to derive the precedence relation. 
+
+The name and type analysis tasks are implemented by programming. The powerful pattern matching and traversal features and built-in data structures of Rascal make this quite easy. By breaking a function in separate ``rules'' that dispatch on the relevant AST constructors both analyses as well as code generation could be modularized and extend in later language levels.
+
+With respect to extension, however, we sometimes had to anticipate later extension of the code.  For instance, the Rascal \texttt{extend} mechanism is currently not powerful enough to \textit{override} a previous definition. For instance, if for a certain language extension an existing language construct needs to be reinterpreted, it is currently impossible to do this. In other words, the only extensibility Rascal currently caters for is \textit{syntactic}: you may add another function alternative (e.g., bind, check) for the new construct, but you cannot revisit an existing case. We are currently investigating how function definitions can override a previous definition handling the same case. This would allow calling the previous definition using a special keyword (e.g., \texttt{super}).
+
+Another direction for improvement is concerned with how state and context information currently has to be manually threaded through recursive functions. A restricted form of dynamically scoped variables could eliminate a significant amount of boilerplate and scaffolding code. Such variables would work like function parameters, except that they are not explicitly passed around. For instance, the \irascal{bind} function currently receives the current set of error messages and has to return tuples of an annotated AST and the new set of error messages. With dynamic variables, the set of error messages would be initialized as a local, but dynamically scoped, variable in the first call to \irascal{bind}. Each recursive invocation \irascal{bind} would update that very same variable.
+
+The code generation to C is currently implemented using Rascal's string templates. While very convenient and flexible, there is some overlap in functionality with pretty printing using Box. It would be interesting to see if some of the formatting features of Box could be integrated into the string templates. More generally, we think a better integration of Box into the language as a whole would be make the development of pretty printers much easier. This would involve a much closer integration with the concerete syntax features of Rascal, for two reasons. First, the system could then automatically deal with parenthesis insertion. Second, since the input to the pretty printer is an AST, all comments are lost. In many cases this is unacceptable.
+
+To conclude, our experience implementing \oberon shows that Rascal is a suitable language for prototyping languages in a modular fashion, with relatively little effort. All five tasks across the four language levels have been implemented in under 1500 source lines-of-code. Finally, we have implemented an \oberon IDE using Rascal's lightweight hooks into Eclipse. 
+
