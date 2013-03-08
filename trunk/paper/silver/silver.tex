@@ -1,14 +1,17 @@
-\newpage
+%\setcounter{page}{0}
+
+%\newpage
 \newcommand{\code}[1]{\texttt{#1}}
 
 \section{Silver, a meta-language for language extension}
 
 \subsection{Introduction to Silver}
 
-Silver is an extensible attribute grammar system that
-supports many modern attribute grammar features.  These include
-higher-order\cite{vogt89}, reference~\cite{hedin00informatica}, and a
-simplified notion of collection attributes~\cite{boyland05}.
+Silver~\cite{vanwyk10scp} is an extensible attribute grammar system
+that supports many modern attribute grammar features.  These include
+higher-order attributes~\cite{vogt89}, reference
+attributes~\cite{hedin00informatica}, and a simplified notion of
+collection attributes~\cite{boyland05}.
 %
 Silver introduced \emph{forwarding} into an attribute grammar
 setting~\cite{vanwyk02}, a mechanism that is useful for specifying
@@ -22,8 +25,8 @@ language, Silver has specific syntax for specifying the concrete and
 lexical syntax of the object language.
 %
 In addition, Silver's type system supports parametric polymorphism and
-a limited form of type inference which allows one to write lazy
-functional programs in Silver~\cite{kaminski11sle}.
+a limited form of type inference.  Silver can be seen as a lazy
+functional language with support for attribute evaluation~\cite{kaminski11sle}.
 
 
 
@@ -34,7 +37,8 @@ which a \emph{host language} is composed with a set of
 independently-developed \emph{language extensions}.  This composition
 of specifications of these components is to be performed automatically
 by Silver and Copper and can thus be done at the direction of a
-non-expert programmer.
+non-expert programmer without the need to write any so-called glue
+code to compose them.
 
 Silver is both a (meta) language for language specifications, as well
 as a tool that translates AG specifications to Java and concrete
@@ -42,7 +46,7 @@ syntax specifications to the input language for Copper.  Copper
 generates the scanner and parser as Java code as well.  The resulting
 Java code is compiled and packaged into a JAR file.  Silver
 (implemented as a Silver specification) and Copper are both
-distributed in source form under the LGPL licences and as executable
+distributed in source form under the LGPL and as executable
 Java Jar files, making installation simple.
 
 
@@ -53,70 +57,103 @@ Oberon0 specification is organized in many different Silver modules,
 called grammars.
 %
 A grammar can contain lexical and concrete syntax specifications as
-well as attribute grammar specifications for defining language
-semantics, optimizations, and translations.  
+well as attribute grammar specifications
+% for defining language semantics, optimizations, and translations.  
 %
+that can add new language constructs and/or new analyses over existing
+constructs.  This problem is commonly referred to as the
+\emph{expression problem.}  In Silver, this amounts to supporting
+grammars (extensions) that add new productions for pre-existing and
+new nonterminal symbols as well as adding new attributes to
+pre-existing productions.
+
+
 A Silver grammar can be organized hierarchically in a directory
-structure and grammar names match this structure.  
+structure and grammar names match this structure.  We follow the
+example of package naming in Java so that grammar names (and
+directories) are unique when they are based on an organizations
+internet domain name.
 %
 %A grammar is composed of the specifications in all Silver files
 %(ending with a \code{.sv} extension) in a directory, and the scope of
 %specifications in one file include all other files in that grammar.
 %
-Grammars can \code{import} and \code{export} specifications from other grammars to
-create grammar specifications that are composed of multiple grammars. 
+Grammars can \code{import} and \code{export} specifications from other
+grammars to create grammar specifications that are composed of
+multiple grammars.
 %
 Thus a language designer has a high degree of flexibility in how he or
-she organizes the language specifications.
+she organizes language specifications.
 
-\begin{figure}
-\begin{verbatim}
-core
-  concreteSyntax, abstractSyntax, typeChecking
-constructs
-  controlFlow, dataStructures, procedures  
-    concreteSyntax, abstractSyntax, typeChecking
-tasks
-  codegenC
-    core, dataStructures, procedures
-components
-  L1, L2, L3, L4, L5, T1, T2, T3, T5
-artifacts
-  A1, A2a, A2b, A3, A4, A5
-\end{verbatim}
-\caption{The directory structure of the Oberon0 specifications.}
-\label{silver:fig:structure}
-\end{figure}
+The Silver Oberon0 specifications are organized across 5
+directories.  The \code{core} grammar (and its component sub-grammars)
+defines language L1 and tasks T1, T2, and T3.  The \code{constructs}
+grammar has component grammars that define, respectively, control flow
+features (L2), data structures (L3) and procedures (L4).
+The \code{tasks} grammar and its components define the C code
+generation tasks for the various language levels.
+%
+The grammars in \code{components} directory compose the relevant
+grammars from \code{core}, \code{constructs}, and \code{tasks} to
+define grammars for each language (L1 to L5) and each task (T1 to T5).
+%
 
-The directory/grammar hierarchy for the Silver specifications for
-Oberon0 (contained in a directory named \code{Oberon0}) is shown in
-Figure~\ref{silver:fig:structure}.  The specifications for the Oberon0
+Finally, an \code{artifacts} directory contains grammars for the
+specific artifacts A1 to A5.  Silver has \code{import}
+and \code{export} statements for managing grammar composition.  To
+build, say, the artifact A3, the A3 grammar in \code{artifacts}
+imports the relevant components from \code{components} which import
+relevant specifications from the other three directories.
+
+Grammar composition is relatively straightforward, essentially the set
+union of the different types of specifications in the various
+modules.  Named components (\emph{e.g.} productions, attributes,
+non-terminals) have a \emph{fully-qualified name} composed of the
+unique grammar name and the name defined in the grammar.  Thus
+name-clashes are never a problem in Silver.  Silver's import
+statements are similar to Haskell's in that imported grammars and
+components can be renamed locally to allow for convenient use of short
+names in specifications that map back to the unique fully-qualified
+name. 
+
+
+
+\begin{comment}
+The directory/grammar hierarchy used to organize the Silver
+specifications for Oberon0 demonstrates this flexibility.  
+
+
+This allows a significant amount of freedom in how the specifications
+for the different language levels and processing tasks to be
+organized.  In our implementation,
+the specifications for the Oberon0
 language constructs in the languages L1 to L5 and the specifications
 for the language processing tasks T1 to T5 are organized across three
-directories in the \code{Oberon0} directory: \code{core},
+directories: \code{core},
 \code{constructs}, and \code{tasks}.
 %
 The \code{core} directory contains grammars with specifications for
 the language L1 and tasks T1, T2, and T3.
 %
-In it, the L1 lexical and concrete syntax specifications and the T1 pretty
-printing task specifications are in the grammar in
-\code{concreteSyntax}, the abstract syntax and T2 name analysis task
-is in the grammar \code{abstractSyntax}, and the type checking task
-(T3) is specified in the \code{typeChecking} directory.
-%
-This illustrates one possible organization of the specifications.  Of
-interest is that attributes implementing name analysis are written
-on the grammar productions defining the abstract syntax, so-called
-\emph{abstract productions}, while the type
-checking attributes for these productions are defined in so-called
-\emph{aspect productions} which allow one to define new attributes for
-existing grammar productions.
-
+In it, the L1 lexical and concrete syntax specifications and the T1
+pretty printing task specifications are in the grammar in
+\code{core/concreteSyntax}, the abstract syntax and T2 name analysis task
+specifications are in the grammar \code{core/abstractSyntax}, and the type
+checking task (T3) is specified in the \code{core/typeChecking} directory.
+%\begin{comment}
+%This illustrates one possible organization of the specifications.  Of
+%interest is that attributes implementing name analysis are written
+%on the grammar productions defining the abstract syntax, so-called
+%\emph{abstract productions}, while the type
+%checking attributes for these productions are defined in so-called
+%\emph{aspect productions} which allow one to define new attributes for
+%existing grammar productions.
+%\end{comment}
 The \code{constructs} directory defines the languages features that
-are added to create language level L2 (\code{controlFlow}), L3
-(\code{dataStrucutes}), and L4 (\code{procedures}) and these are 
-organized in the same manner as the L1 specification in \code{core}.
+are added to create language level L2 (\code{constructs/controlFlow}),
+L3 (\code{constructs/dataStrucutes}), and L4
+(\code{constructs/procedures}) and these are organized in the same
+manner as the L1 specification in \code{core}.
 %
 This organization is inverted in the \code{tasks/codegenC} directory
 in which the C code generation task specification is separate from all
@@ -146,11 +183,11 @@ types of specifications in the various modules.
 %
 These grammars and the composition process are discussed in more
 detail in Section~\ref{silver:sec:artifacts}
-
+\end{comment}
 
 \subsection{Scanning and parsing}
 
-Silver is coupled to our integrated parser and context-aware scanner
+Silver is coupled to our integrated parser and \emph{context-aware} scanner
 generator, Copper, and allows concrete and lexical syntax
 specifications to be written in the same grammar modules as the
 attribute grammar specifications.  These specifications are collected
@@ -158,37 +195,38 @@ and passed to Copper for analysis and generation of a context-aware
 scanner and slightly modified LALR(1) parser that is used in the
 resulting AG evaluator generated by Silver.
 
-Copper has two distinguishing characteristics.  First, Copper generates
-context-aware scanners~\cite{vanwyk07gpce} which use contextual
-information to dis-ambiguate lexical syntax.
-%
-The parser uses a slightly modified LR- style algorithm that passes to
-the scanner the set of valid symbols that the scanner may return at
-that point in parsing. This set consists of the terminals whose
-entries in the parse table for the current parse state are
-\emph{shift}, \emph{reduce}, or \emph{accept}, but not \emph{error}.
-The scanner will only return tokens in this set and a static analysis
-ensures there are no lexical ambiguities; thus at most one token will
-ever be returned from the scanner.
+Context-aware scanners~\cite{vanwyk07gpce} generated by Copper only
+scan for (and thus return) terminals that are valid for the current
+context.  In the case of LR parsers this context is the current LR
+parse state and the valid terminals are those whose parse table entry
+for the current state is \emph{shift}, \emph{reduce}, or
+\emph{accept}, but not \emph{error}. Thus the principle of
+disambiguation by maximal munch is subordinate to the principle of
+disambiguation by context.
 
 This type of scanning allows terminals that appear in different
 parsing contexts to have overlapping regular expressions.  This is
 especially useful when parsing and scanning extensible languages in
 which domain specific languages can be embedded since the host and
-embedded languages may have overlapping lexical syntax.  More
-generally, this means that terminal symbols do not need to be
+embedded languages may have overlapping lexical syntax.  For example,
+a keyword in an embedded language may be used as an identifier in the
+so-called host language.
+%
+More generally, this means that terminal symbols do not need to be
 overloaded, instead different terminal symbols can be specified with
 overlapping regular expressions.  This means that they are not
 overloaded in the parser and thus parse table conflicts are less
 likely to occur~\cite{vanwyk07gpce}.
 
-Second, Copper comes with a modular determinism
+Copper also has a modular determinism
 analysis~\cite{schwerdfeger09pldi} that lets extension writers check
 the concrete and lexical syntax specification of their extension to
 ensure that the composition of the host language and any other
-extensions verified by this analysis will be free of conflicts and
-lexical ambiguities.  That is, the parser and scanner generated from
-the composition ``just works.''
+extensions verified by this analysis will be free of parse table
+conflicts and lexical ambiguities.  That is, the parser and scanner
+generated from the composition ``just works.''  This analysis
+essentially identifies a class of context free grammars that are
+closed under composition.
 
 %  These are explained in more detail below when describing specific
 %  Oberon0 specifications.
@@ -200,10 +238,10 @@ from others, the structure of the specifications are quite familiar.
 Specifications for lexical syntax consist primarily of terminal symbol
 declarations, which, as expected, name the terminal symbol and provide
 the defining regular expression.  In the Silver specification, the
-\code{Id\_t} terminal specifies variable names:
+\code{Id} terminal specifies variable names:
 
 \noindent
-\verb!terminal Id_t /[A-Za-z][A-Za-z0-9]*/ ;!
+\verb!terminal Id /[A-Za-z][A-Za-z0-9]*/ ;!
 
 Terminals such as keywords, punctuation, and operators, whose regular
 expressions match only one string can specify the regular expression
@@ -224,34 +262,70 @@ associativity specifications.
 
 Copper supports a notion of lexical precedence, for disambiguating
 keywords from variables, for example, and the specification of
-white-space and comments with a \code{ignore} modifier that indicates
+white-space and comments with the \code{ignore} modifier that indicates
 a terminal is not to be passed on to the parser.
 
 
-\paragraph{Sample specifications - concrete syntax}
-Specifications for concrete syntax also have a familiar structure.
-Figure~\ref{silver:fig:concrete} shows the specification of the two
-for-loop constructs added in language L2.
+\paragraph{Sample specifications - context free concrete syntax}
+Specifications for concrete context free syntax also have a familiar
+structure; productions are written in BNF style and symbols may be
+preceded by a name which is used in any attribute evaluation.
+Figure~\ref{silver:fig:concrete} shows the specification
+of the two for-loop constructs added in language L2.
 \begin{figure}
+%
+%imports edu:umn:cs:melt:Oberon0:core; 
+%imports
+%edu:umn:cs:melt:Oberon0:constructs:controlFlow:abstractSyntax;
+{\small
 \begin{verbatim}
+grammar edu:umn:cs:melt:Oberon0:constructs:controlFlow:concreteSyntax;
+
 concrete productions s::Stmt_c
  | 'FOR' id::Name_c ':=' lower::Expr_c 'TO' upper::Expr_c
-                    'DO' body::Stmts_c 'END'         
-  { s.ast = forStmt(id.ast, lower.ast, upper.ast, body.ast); }
+     'DO' body::Stmts_c 'END'         
+   { s.ast = forStmt(id.ast, lower.ast, upper.ast, body.ast); }
+
  | 'FOR' id::Name_c ':=' lower::Expr_c 'TO' upper::Expr_c
-                    'BY' step::Expr_c 'DO' body::Stmts_c 'END' 
-  { s.ast = forStmtBy(id.ast, lower.ast, upper.ast, step.ast, 
-                      body.ast); }
+     'BY' step::Expr_c 'DO' body::Stmts_c 'END' 
+   { s.ast = forStmtBy(id.ast, lower.ast, upper.ast, step.ast, 
+                       body.ast); }
+
+synthesized attribute ast<a> :: a ;
+attribute ast<Expr> occurs on Expr ;
 \end{verbatim}
+}
 \caption{Concrete syntax specifications for the for-loop.}
 \label{silver:fig:concrete}
 \end{figure}
-These productions are written in the more-or-less familiar BNF-style.
-Nonterminals and terminal symbols can be named and used in the
-attribute definitions that can decorate concrete productions.  Here the
-higher-order synthesized \code{ast} attribute is used to construct
-ASTs.  Attribute definitions are specified between the curly braces
-following the production definition.
+Since they are labelled as \code{concrete} they are used by
+Copper to generate a parser for the language.  The attribute
+equations, in curly braces, and the declarations for the attribute
+\code{ast} are discussed below.
+
+
+\subsection{Attribute Grammars, Attribute Evaluation}
+
+In attribute grammars~\cite{knuth68}, nonterminal symbols are
+associated with named values called \emph{attributes}; nonterminal
+nodes in a syntax tree are decorated with these attributes that
+contain semantic information.
+%
+Equations associated with productions define the values for attribute
+and are used to propagate information up the syntax tree, in
+\emph{synthesized} attributes, or down the tree, in \emph{inherited}
+attributes.
+%
+In Silver, nonterminals and terminal symbols in a production can be
+named so that these names can be used in attribute definitions, which
+are specified between the curly braces following the production.
+Attribute evaluation is supported on all productions, those that
+define concrete syntax and those that define abstract syntax.
+
+In Figure~\ref{silver:fig:concrete}, \code{ast} is a higher-order (synthesized)
+attribute~\cite{vogt89}.  The values of such attributes are syntax trees as
+opposed to primitive values such as numbers or strings.  In this case
+the attribute is used to construct abstract syntax trees (ASTs).
 %
 For the first production, the abstract for-loop AST is stored
 in the \code{ast} attribute of the left hand side nonterminal named
@@ -259,26 +333,233 @@ in the \code{ast} attribute of the left hand side nonterminal named
 not appear in the AST, they are specified here using only the constant
 lexeme in single quotes that was given in the definition of that
 terminal symbol.
+%
+The attribute \code{ast} is polymorphic with type parameter \code{a}.
+Type parameters are written between angle brackets.
+%
+Thus on concrete expression nonterminals (\code{Expr\_c}) this
+attribute has the type \code{Expr}, the nonterminal name for
+expressions in the abstract syntax.  This provides a single type-safe
+attribute in which ASTs of different types are stored; that type
+is determined by the nonterminal on which it occurs.
 
-As we will see below, productions defining the abstract syntax of the
-language differ from concrete production in only three ways: they use
-the \code{abstract} modifier instead of \code{concrete}, they are named
-unlike the anonymous productions shown in
-Figure~\ref{silver:fig:concrete}, and they are not passed to Copper to
-be used to generate a parser.  Otherwise there is no distinction
+
+Productions defining the abstract syntax of the language, as shown in
+Figure~\ref{silver:fig:abstract-for}, differ from concrete production
+in only three ways: they use the \code{abstract} modifier instead of
+\code{concrete}, they are named unlike the anonymous productions shown
+in Figure~\ref{silver:fig:concrete}, and they are not passed to Copper
+to be used to generate a parser.
+%
+Otherwise there is no distinction
 between the two in Silver.  Thus, one can define all the semantics of
 the language on the concrete syntax tree if desired.  For Oberon0 we
 chose to use a separate abstract syntax, primarily for demonstration
 purposes.
 
+The abstract production \code{forStmtBy} in
+Figure~\ref{silver:fig:abstract-for} provides equations defining
+(among others) the synthesized attributes \code{pp}, for
+pretty-printing the code, and \code{errors}, for collecting error
+messages.  It also defines the inherited attribute \code{env} on the
+child nodes for propagating an environment (symbol table) down the
+syntax tree.  This production also using forwarding to translate the
+for-loop to the semantically equivalent constructs using a while-loop.
+Each of these is explained more fully in the following sections that
+describe the Silver implementation of the various language tasks for
+which these attributes and forwarding are used.
+\begin{figure}
+{\small
+\begin{verbatim}
+grammar edu:umn:cs:melt:Oberon0:constructs:controlFlow:abstractSyntax ;
+abstract production forStmtBy
+s::Stmt ::= id::Name low::Expr up::Expr step::Expr body::Stmt
+{ s.pp = ... lower.pp ... upper.pp ... step.pp ... body.pp ... ;
+  low.env = s.env;  up.env = s.env; ...
+
+  s.errors := low.errors ++ up.errors ++ step.errors ++ 
+    body.errors ++
+    case lookupDecl (id.name, s.env) of
+    | nothing() -> [ err(s.location, id.name ++ " not declared") ]
+    | just(dcl) -> [ ]
+    end;
+
+  forwards to seq( 
+    assign(idAccess(id), low),
+    while(compareOperator(lExpr(idAccess(id)), up),
+      seq( body,
+           assign(idAccess(id), add(lExpr(idAccess(id)), step)))
+    ) );
+}
+\end{verbatim}
+}
+\caption{Abstract syntax and attribute specifications for the for-loop.}
+\label{silver:fig:abstract-for}
+\end{figure}
 
 
 \subsection{Name analysis}
 
-Name analysis in the Silver implementation of Oberon0 proceeds in a standard
-way: an environment exists to look up symbols, it's extended by declarations,
-and consulted to report redeclarations or undefined symbols.
+Name analysis in the Silver implementation of Oberon0 proceeds in a
+standard way: an environment (symbol table) is used to look up names,
+retrieve their declarations and thus types, and report as errors any
+redeclarations or undefined symbols.  This environment is passed down
+the syntax tree in an inherited attribute named \code{env}.  This can
+be seen in the equations of the form \texttt{low.env = s.env;} in
+Figure~\ref{silver:fig:abstract-for}.  The \code{env} attribute is
+defined as an ``autocopy'' inherited attribute and thus if there is no
+equation defining \code{env} on a child then a copy equation such as
+those shown here are generated.
+
+The function \code{lookupDecl}, whose signature is shown below,
+\begin{verbatim}
+function lookupDecl Maybe<Decorated Decl> ::= n::String e::Env
+\end{verbatim}
+takes a name to look up and an environment and
+returns either a \emph{nothing} value, indicating that the name was
+not found, or a \emph{just d} value, in which $d$ is a reference to
+the \code{Decl} node in the tree that declared the name $n$.
+Here the \code{Maybe} type is the same as found in functional
+languages such as Haskell or ML.
+
+A use of this is seen in the definition of the \texttt{errors}
+attribute for \texttt{s} in Figure~\ref{silver:fig:abstract-for}. 
+(As discussed below, since \code{errors} is a \emph{collection}
+attribute the \code{:=} symbol is used instead of \code{=}.)
+The type of \texttt{errors} is a list of messages, \texttt{[Message]}
+and is defined here by combining the list of errors from the child
+nodes (using the list append operator \texttt{++}) and checking if the
+name \texttt{id} is defined.
 %
+The case-expression matches on the result from a call to
+\code{lookupDecl} to generate a list with an error message if the call
+returns \texttt{nothing()} or the empty list if the declaration is
+found, \code{just(dcl)}.
+
+\paragraph{Decorated types}
+The type \code{Decorated Decl} is
+  a \emph{reference}~\cite{hedin00informatica}
+  or \emph{remote}~\cite{boyland05} \emph{attribute} and can be
+  informally understood as a pointer or reference to a \code{Decl}
+  node in the syntax tree.
+%
+Whereas a higher-order attribute holds undecorated syntax tree values,
+a reference attribute denotes an existing,
+attributed, node in the tree.
+%
+From a value of type \texttt{Decorated Decl}, attributes occurring on
+\code{Decl} can be retrieved, but not written to
+since Silver treats them in a purely functional way.  That is
+supported in both JastAdd's reference attributes and Boyland's remote
+attributes. 
+%
+%The term ``collection attribute" is somewhat overloaded, coming initially
+%from Boyland's remote attributes~\cite{boyland05}.
+%
+
+
+%
+Thus a production with a name use calls \code{lookupDecl} to determine
+if the name is declared, and if so, can use the reference to look up,
+for example, the type of the declared name. This is shown in the
+discussion of type checking in Figure~\ref{silver:fig:typing-number}
+that follows.
+
+\begin{comment}
+The result type of looking up a name in the environment --
+ -- is a \textit{reference attribute} to the
+node in the tree that declared that name.
+%
+Binding names to declaration sites is a relatively standard use for
+reference attributes.
+%
+% TODO: we can cite JastAdd doing the same thing, probably, when we see their impl
+%
+%
+Typically, reference attributes come along with some features for manipulating
+them, such as \textit{remote attributes}.
+%
+%
+Reference attributes remain extremely useful, however, as this simplifies
+many kinds of environment lookups.
+%
+For example, as we will see later, type checking and renaming transformations
+can all proceed with no modifications to the environment: they simply consult
+different attributes on the declaration node.
+\end{comment}
+
+
+\paragraph{The environment}
+Oberon0 nests scopes in a standard manner, with a name declared in a
+scope hiding any with the same name in a lexically enclosing scope.
+%
+The type of attribute \code{env} is the non-terminal type
+\texttt{Env}.  This higher-order attribute is a simple container that holds
+an attribute named \texttt{bindings} of type 
+\begin{verbatim}
+[ TreeMap<String (Decorated Decl)> ]
+\end{verbatim}
+%
+The bindings of names to declaration nodes in single scope is
+represented by a map (\texttt{TreeMap} is a red-black tree map) and
+the maps for all scopes are kept in a list, ordered from inner-most to
+outer-most scope.
+%
+Note that when multiple type parameters are needed for a Silver
+polymorphic nonterminal or attribute, as in the case of
+\texttt{TreeMap}, they are separated by spaces and thus it is common
+to write some compound names inside parenthesis.  Here, the map (for a
+single scope) is from strings to decorated \texttt{Decl} nodes.
+
+
+\paragraph{Specifications in a functional style}
+The function \code{lookupDecl}, whose type is given above, is used to
+retrieve the reference to a variable's declaration, if it exists,
+given the variables name and environment.  The result \code{Maybe}
+type is constructed from either a \code{nothing} or a \code{just}
+production.  The body of that function is shown below:
+\begin{verbatim}
+ return foldr(orElse, nothing(), lookupInScopes(s, e.bindings)); 
+\end{verbatim}
+It folds up the results of looking for the name \code{s} in all the
+scopes in the the environment using a base-value of \code{nothing} and
+combining results with \code{orElse} to return the first result from
+\code{lookupInScopes} that is not a \code{nothing()}.
+%
+The function \code{lookupInScopes}, shown below, where the type
+parameter \code{a} will be instantiated as \code{Decorated Decl}:
+\begin{verbatim}
+function lookupInScopes
+[Maybe<a>] ::= s::String ss::[TreeMap<String a>]
+{ return map(adapt, map(treeLookup(s,_), ss)); }
+\end{verbatim}
+This function uses two applications of a
+traditional polymorphic \code{map} function on the results of looking
+up values in the underlying \code{TreeMap} structures.  The
+\code{adapt} function converts a list of values to a \code{nothing()} value
+if the list is empty or a \code{just} of the first element of the
+list.
+%
+The \code{treeLookup} function takes a string and a tree and returns a
+\code{Maybe<a>} result: \code{nothing()} if it is not found and
+\code{just(}$v$\code{)} if the value found is $v$.  Silver supports
+\emph{partial application} of functions and that is used here where
+\code{treeLookup} is given only is first argument.  The second is not
+given, as indicated by the underscore.  The result of the partial
+application is a specialized lookup function for the name \code{s}
+that takes a tree as its only input.
+
+Because Silver uses lazy evaluation, it's not inefficient to use this,
+as we'll only actually do the lookup as far as gets demanded in the
+scope list.  This style of programming is quite familiar to functional
+programmers and demonstrates the use of parametric polymorphism and
+higher-order functions in Silver.
+
+\begin{comment}
+\paragraph{OLD}
+env on a node contains the list of scopes
+a list of scopes
+
 The environment is represented by the \texttt{env} inherited
  \footnote{Actually it is an 'autocopy' attribute, this is simply an inherited attribute
  that implicitly copies from parent to child if no other definition is present.}
@@ -311,104 +592,104 @@ would be set up.
 % set up in a way that allows new namespaces to be added by extensions, making
 % it, in effect, an extensible environment.
 
-\paragraph{Decorated types}
-The result type of looking up a name in the environment -- \texttt{Decorated Decl} --
-is a \textit{reference attribute} to the node in the tree that declared that name.
-%
-Binding names to declaration sites is a relatively standard use for
-reference attributes.
-%
-% TODO: we can cite JastAdd doing the same thing, probably, when we see their impl
-%
-Whereas a higher-order attribute only represents the \textit{structure} of
-a tree, a reference attribute is actually a direct reference to an existing,
-attributed, node in the tree.
-%
-Typically, reference attributes come along with some features for manipulating
-them, such as \textit{remote attributes}.
-%
-Silver, however, treats them in a purely functional way; they can only be
-consulted for the values of their attributes, and cannot be affected in
-any way.
-%
-Reference attributes remain extremely useful, however, as this simplifies
-many kinds of environment lookups.
-%
-For example, as we will see later, type checking and renaming transformations
-can all proceed with no modifications to the environment: they simply consult
-different attributes on the declaration node.
-
-\paragraph{Specifications in a functional style}
-The function \code{lookupType} is used to retrieve the reference to a
-variable's declaration, if it exists, given the variables name and
-environment.  The result \code{Maybe} type is constructed from either
-a \code{nothing} or a \code{just} production.   This function is shown below:
-\begin{verbatim}
-function lookupType
-Maybe<Decorated Decl> ::= s::String e::Decorated Env
-{ return foldr(orElse, nothing(), lookupInScopes(s, e.types)); }
-\end{verbatim}
-It folds up the results of looking for the name \code{s} in all the
-scopes in the the environment using a base-value of \code{nothing} and
-combining results with \code{orElse} to return the first result from
-\code{lookupInScopes} that is not a \code{nothing()}.
-%
-The function \code{lookupInScopes}, shown below,
-\begin{verbatim}
-function lookupInScopes
-[Maybe<a>] ::= s::String ss::[TreeMap<String a>]
-{ return map(adapt, map(treeLookup(s,_), ss)); }
-\end{verbatim}
-uses two applications of a
-traditional polymorphic \code{map} function on the results of looking
-up values in the underlying \code{TreeMap} structures.  (The
-\code{adapt} function converts a list of values to a \code{nothing()}
-if the list is empty or a \code{just} of the first element of the list.
-Thanks to laziness, it's not inefficient to use this, as we'll only
-actually do the lookup as far as gets demanded in the scope list.
-This style of programming is quite familiar to functional programmers
-and demonstrates the use of parametric polymorphism and higher-order
-functions in Silver.
+\end{comment}
 
 
-\paragraph{Collection attributes}
-Silver's composition model allows extensions to \textit{safely} add new attributes
-to existing nonterminals, as well as new productions, so long as those productions forward
-to existing host language productions.
-%
-% This is very powerful.
-%
-It's worth noting that this is not easily possible
-with objects nor algebraic datatypes, and is frequently called ``the expression
-problem."
-%
-However, it's not a complete picture of composition.
-%
-Extensions may need to affect existing host language attributes in some ways.
+\subsection{Type Checking}\label{}
 
-The simplest example is error reporting: the host language defines a synthesized
-attribute called \texttt{errors} that is simply a list of error messages.
-%
-However, extensions may need to add new error messages.
-%
-This is particularly apparent with our implementation, as type checking is
-implemented separately from the core host language.
+Specifications for type checking are spread across the various
+grammars in the Silver Oberon0 specification and show how new analysis
+can be added to productions defined in other grammars.  Since some
+artifacts, such as A2a which does only name analysis, do not include
+type checking this must be the case.  Others, such as artifact A2b do
+type checking and thus must include these specifications.
 
-Silver provides a notion of \textit{collection attributes} that permits this.
+The grammars that specify type checking define a new synthesized
+attribute \code{type} that occurs on both \code{Decl} and \code{Expr}.
 %
-Collection attributes are ordinary attributes that come with a
-\textit{composition operator}, for example the \texttt{errors} attribute
-is defined with the \texttt{++} (list append) operator:
+On a declaration, this attribute is consulted via the reference
+attribute returned from \code{lookupDecl} to determine the type of a
+variable.  On an expression, this attribute is computed to specify its
+type.
+%
+The type of the \code{type} attribute is \code{TypeRep}, a
+representation of types determined after type names have been
+resolved.  (Alternatively, we could have chosen \code{type} to have the
+type of \code{Decorated TypeExpr}; type expression constructs in
+declarations are represented by the type \code{TypeExpr}.)
+
+%\newpage
+\paragraph{Aspect productions and Collection attributes}
+
+We need to provide equations defining the \code{type} attribute for
+expressions (productions with \code{Expr} on their left hand side).
+When types are not used correctly we need to report additional errors
+above what are reported when only name analysis is performed, as in
+artifact A2a.
+%
+Silver's composition model allows grammars to declare new attributes,
+indicate that they occur on existing nonterminals, and define
+equations for these new attributes for existing productions.
+
+Figure~\ref{silver:fig:typing-number} shows an \emph{aspect} for the
+production \code{intConst} that defines the value of \code{type} on
+the production for integer constants to be a representation of the
+type integer.  Such aspect productions allow new attribute equations
+to be specified for productions defined in other grammars. Similar
+aspects for other expressions are also defined in the grammar, whose
+name is shown at the top of this figure in the \code{grammar}
+declaration.
+
+This example does not provide a complete picture of composition of
+language specifications in Silver or provide a complete solution to
+the type checking problem.  While we do not need to report any type
+checking error messages on the \code{intConst} production we certainly
+need to on others.
+%
+Collection attributes in Silver allow aspect productions to add new
+error messages to the existing \code{errors} attribute defined in
+another grammar.
+\emph{Collection attributes} are ordinary attributes that come with a
+\textit{composition operator} that is used to combine all
+\emph{contributions} to a collection attribute specified in different
+aspects for a production.  For \code{errors}, this operator is the
+list append (\texttt{++}) operator as specified in the \code{with}
+clause of its declaration:
 %
 \begin{verbatim}
 synthesized attribute errors :: [Message] with ++;
 \end{verbatim}
 %
-The term ``collection attribute" is somewhat overloaded, coming initially
-from Boyland's remote attributes~\cite{boyland05}.
+
+In Figure~\ref{silver:fig:abstract-for} the base value of
+\code{errors} for a for-loop is specified using the \code{:=} defining
+operator, instead of the regular \code{=} operator.  Besides
+collecting errors from the child nodes, the indexing variable is
+looked-up in the environment to ensure that it is declared.  In
+Figure~\ref{silver:fig:typing-for} additional error messages are
+contributed to this base value by definitions using the \code{<-}
+operator.  Here, the indexing variable is looked-up in the
+environment again and if it is found and its type is not an integer
+(as determined by the call to \code{check}) an additional error
+message is generated.
 %
-Silver's collection attributes do not permit any remote contribution across
-the tree, however.
+In general, the final value of the collection attribute is equivalent
+to the expression \texttt{foldr (}
+\emph{compositionOperator}\texttt{,} \emph{baseDefinition}\texttt{, [}
+\emph{contributions} \texttt{] )}.
+
+
+Collection attributes allow the language being extended to provide
+specific ways in which language extensions can affect, that is
+contribute to, existing attributes.
+%
+This is quite useful.  In the case of \code{errors} the type checking
+extension can use the existing error-reporting facilities of the core
+language and does not need define a new attributes, say
+\code{typeErrors}, to collect the typing error messages.
+
+
+\begin{comment}
 %
 Instead, they are purely within one production, and contributions instead come
 from all aspects of that production, along with an initial ``base" definition:
@@ -436,8 +717,67 @@ extensions.
 Extensions are forbidden from doing anything ``dangerous" by default,
 and the host language can poke well-defined holes to permit specific
 kinds of extension behavior.
+\end{comment}
 
 
+
+\begin{figure}
+{\small
+\begin{verbatim}
+grammar edu:umn:cs:melt:Oberon0:core:typeChecking;
+attribute type occurs on Expr ;
+aspect production intConst  e::Expr ::= n::Integer
+{  e.type = integerType();  }
+\end{verbatim}
+}
+\caption{Aspect production to type integer constants.}
+\label{silver:fig:typing-number}
+\end{figure}
+
+\begin{figure}
+\small
+\begin{verbatim}
+grammar edu:umn:cs:melt:Oberon0:constructs:controlFlow:typeChecking;
+
+aspect production forStmtBy
+s::Stmt ::= id::Name low::Expr up::Expr step::Expr body::Stmt
+{ s.errors <- 
+    case lookupValue(id.name, s.env) of
+       | nothing() -> [ ] 
+       | just(dcl) -> if check(dcl.type, integerType()) then []
+                      else [ err(s.location, "... wrong type...")  ]
+    end;
+}
+\end{verbatim}
+\caption{Aspect production for type checking a for-loop.}
+\label{silver:fig:typing-for}
+\end{figure}
+
+\begin{comment}
+%
+% This is very powerful.
+%
+%It's worth noting that this is not easily possible
+%with objects nor algebraic datatypes, and is frequently called ``the expression
+%problem."
+%
+
+The simplest example is error reporting: the host language defines a synthesized
+attribute called \texttt{errors} that is simply a list of error messages.
+%
+However, an extension may perform additional analysis and thus need to
+add new error messages to the \texttt{errors} attribute on an existing
+production that already defines that attribute.
+%
+This is in fact how we implement type checking in a grammar that is
+separate from the core host language specification which defines the
+\code{errors} attribute and add name-analysis errors to it.
+
+Silver provides a notion of \textit{collection attributes} that permits this.
+%
+\begin{comment}
+
+\begin{comment}
 \subsection{Type checking}
 
 Typechecking is implemented separately from the host language, as some artifacts
@@ -463,8 +803,6 @@ The typechecking extensions take the following form:
 The function \code{checkErrors} returns a list containing a message if
 the first two types do not match; the list is empty if they do.
 
-\item Type equality checking is done using pattern matching, but also implemented
- in a way that allows it to be extended.
 \end{itemize}
 
 The distinction between type expressions and type representations is made for
@@ -496,6 +834,13 @@ looked up and resolved where they occur in the program text, as well.
 %
 As a result, the \texttt{TypeRep} for records actually contains a reference
 back to the \texttt{Decorated Decl} for the fields.
+\end{comment}
+
+
+
+\begin{comment}
+ Type equality checking is done using pattern matching, but also implemented
+ in a way that allows it to be extended.
 
 
 \paragraph{Pattern matching}
@@ -540,6 +885,10 @@ production at all, because it will match as though it were the production
 it forwarded to.
 
 %\newpage
+\end{comment}
+
+
+
 \subsection{Source-to-source transformation}
 \label{silver:sec:transformation}
 
@@ -547,44 +896,65 @@ it forwarded to.
 The Challenge task (T2) of adding a for-loop and case-statement to the
 initial language, the code generation task (T5), and some simple
 syntax desugaring all illustrate the effectiveness of
-\emph{forwarding}, a mechanism for specifying attribute values that is
-useful in writing composable language extensions.
+\emph{forwarding}~\cite{vanwyk02}, a mechanism for specifying
+attribute values that is useful in writing composable language
+extensions.
 %
-In short, a production can compute, at attribute evaluation time, a
-new syntax tree, called the ``forwards-to'' tree, from which it will
-get default attribute values.  Any attribute not explicitly defined by
-the ``forwarding'' production gets its value from the ``forwards-to''
-tree.  It use in these tasks is described below.
+In short, a production can create, at attribute evaluation time, a
+new syntax tree called the ``forwards-to'' tree.   The original tree,
+the so-called ``forwarding tree'' automatically forwards queries for
+attributes for which it does not have a defining equation to the
+forwards-to tree.
+%
+The forwards-to tree is automatically provided with the same set of
+inherited attribute values as given to the forwarding tree.  In this
+way, forwarding can be used to provide default values to synthesized
+attributes.  Another way to understand forwarding is that the
+forwards-to tree is simply a local (sometimes
+called \emph{non-terminal}) attribute for which attribute equations
+are automatically generated that copy values from the forwarded-to
+tree to the node on which the forwarded-to tree was defined (the
+forwarding tree).  The following example uses of forwarding in these
+aforementioned tasks will help to clarify.
 
 \subsubsection{Desugaring}
 
-The convenience provided by forwarding is apparent in the
+The usefulness provided by forwarding is apparent in the
 specifications of the new T2 constructs: the for-loop and
 case-statement.
 %
-On the
-abstract productions for these constructs, we define
-``front-end'' attributes such as those for reporting type errors on
-the productions that define the new constructs so that error messages
+For example, the specification of the for-loop production
+\code{forStmtBy} in Figure~\ref{silver:fig:abstract-for} has a
+\code{forwards to} clause that defines this productions forwards-to
+tree as the expected sequence of an assignment statement and
+while-loop that the for-loop is essentially translated down to.
+%
+This production (and the aspect in Figure~\ref{silver:fig:typing-for})
+defines the \code{errors} attribute
+so that error messages
 are in terms of the constructs that the programmer wrote --- not those
-the constructs may translate down to. 
+the constructs that they may translate down to.
 
-The specification of the for-loop production \code{forStmtBy} is shown
-below, with the expression defining \code{errors} and the computation to
-generate the semantically-equivalent base language construct elided.
-\begin{verbatim}
-abstract production forStmtBy
-s::Stmt ::= id::Name lower::Expr upper::Expr step::Expr body::Stmt
-{ s.errors := ... ;
-  forwards to ... assignment and while-loop implementing
-                  the for-loop ... ;
-}
-\end{verbatim}
-Since the ``back-end'' attributes for C code generation are left
-undefined, the new production forwards to host language constructs
-implementing the for-loop.  The code generated for this constructs is
-simply the C code for their translations to an assignment and a
-while-loop.  A similar process is used for the case-statement.
+But there are no equations for defining the \code{cTrans} attribute the compute
+its translation to C code; the value for the \code{cTrans} attribute
+is defined by forwarding.
+%
+When a for-loop tree is queried for the value of this attribute, it
+simply forwards that query to the forwards-to tree.  Thus, the C
+translation of a for-loop is the C translation of the
+assignment/while-loop that it forwards to.
+A similar process is used for the case-statement.
+
+Without forwarding or some other similar mechanism one much define
+\emph{all} attributes for these simple control flow extensions; this
+can get tedious.  On the other hand, with
+simple macros one cannot define any attributes since all semantic
+analysis happens on the expanded (desugared) code.  This is even less
+appealing since now extension-specific error checking is not
+possible.   For example, one could not report an error that, say, indicates that
+only integer variables are allowed for indexing in for-loops
+since the semantic analysis takes place on the translated-to
+assignment/while-loop combination.
 
 
 %\paragraph{Extensions, sugar, and dispatching}
@@ -592,41 +962,21 @@ while-loop.  A similar process is used for the case-statement.
 
 %\paragraph{Syntaxtic sugar}
 In addition to these T2 constructs, 
-there are many language features that are often little more than easier or
-more convenient ways of writing some other expression of identical meaning.
+there are many language features that are simple syntactic sugar.
+%often little more than easier or
+%more convenient ways of writing some other expression of identical meaning.
 %
-The host language we've defined for Oberon0 has one example: \texttt{VAR}
-declarations can list multiple identifiers at once, with just one type.
+The host language we've defined for Oberon0 has one
+example: \texttt{VAR} declarations can list multiple identifiers at
+once, with just one type.
 %
-That is, both \texttt{VAR x,y : INTEGER} and 
+That is, both \texttt{VAR x,y : INTEGER} and
 \texttt{VAR x : INTEGER, y : INTEGER} have the same meaning.
 %
-In the Silver implementation, the former declaration simply forwards to a sequence
-of the latter kind of declarations.
-%
-This ``desugaring" acts similarly to a macro expansion, but with a critical
-difference: the original tree is not lost or evaluated away.
-%
-Instead the original tree can still control the values of synthesized attributes.
-%
-For example, in order to prevent numerous error messages from being emitted,
-it will only allow the \texttt{errors} attribute to forward through to the
-expanded tree of declarations if there are no errors for the associated
-type expression (i.e. the lookup succeeded.)
-%
-This is a common pattern with forwarding: still do error checking on the
-``sugared" tree, so as to provide good error messages (unlike, say, template
-errors in C++, or errors that occur within macro expansions in Lisp, or
-the kind of error messages that result from complex type-level programming
-in Haskell,) but otherwise let the ``expanded" tree do the real work (translation
-and so forth.)
+In the Silver implementation, the former declaration simply forwards
+to a sequence of the latter kind of declarations.
 
-Forwarding is one of the major features of Silver that can dramatically
-affect how specifications are written.
-%
-It ends up subsuming some of the role of many other features often found in
-language processing tools: higher-order attributes, rewrite rules, desugaring,
-inheritance, and macros. %, to start.
+
 
 \subsubsection{Transformations for code generation}
 
@@ -634,7 +984,7 @@ inheritance, and macros. %, to start.
 The code-generation task (T5) is accomplished in Silver using
 higher-order attributes to create the ``flattened'' Oberon0 program in
 which all procedures are lifted to the top-level, as required by the
-target language C.  We've implemented Johnnson's lambda-lifting
+target language C.  We've implemented Johnsson's lambda-lifting
 transformation~\cite{Johnsson85} to perform this task.
 It requires first renaming variables so that all are unique and must
 solve a set of recursive equations used to compute the
@@ -663,99 +1013,21 @@ used.
 \end{itemize}
 \end{comment}
 
-\subsubsection{Language Extensions}
-
-%\paragraph{Language extensions}
-The real advantage of forwarding is in specifying composable, yet
-independently-developed language extensions.
-%
-While for desugaring, it is merely a convenience, for extension is it essential.
-%
-Without forwarding there is a problem resolving different kinds of extensions:
-when one extension adds a new production, and another adds a new attribute,
-what of the intersection of defining the value of this new attribute on the
-new production?
-
-For the Oberon0 specification, most of the components that are defined separately do
-not qualify as ``composable" language extensions, because they do not have a
-semantic equivalent in the host language.
-%
-For example, though it might be theoretically possible for procedures to
-be translated away, it is not practical to do so.
-%
-In this case, the procedures extension must provide a conditional build trigger
-to include its contributions to how translation to C should proceed, whenever both
-these components are included.
-
-But, for the control flow example, this is not necessary.
-%
-This is because the control flow extensions \textit{do} have semantic
-equivalents in the host language.
-%
-The \texttt{FOR} and \texttt{CASE} statements forward to equivalent
-\texttt{WHILE} and \texttt{IF} statements respectively.
-%
-As a result, any query for the values of attributes can simply be forwarded to
-the equivalent tree in the host language where these attributes are defined.
-%
-It is worth pointing out that this functions despite some complexity in the
-translation: it does renaming, and a full transformation of the tree, before
-finally generating the C code.
-%
-And nowhere does any of it have to worry about these control flow statements.
-
-\begin{comment}
-% We say this above
-The control flow extension \textit{does} provide equations for type checking,
-however, for the same reason some type checking was done for desugaring previously:
-error message quality.
-%
-Although the transformed trees should be semantically equivalent, that only
-extends to whether it is accepted/rejected by analysis, not whether the error
-messages generated are sensible.
-%
-It would be very confusing to see an error about an \texttt{IF} condition
-not being a boolean when the program contains a \texttt{CASE} statement, instead.
-%
-By providing definitions for attributes involved in type checking, we can
-get not only nice error messages, but also ensure the safety of composition.
-\end{comment}
-
-\begin{comment}
-\paragraph{Dispatching} % We might cut this section for length TODO
-Forwarding takes on many roles in Silver specifications.
-%
-One common one in larger compilers, that's we've forced to take a slightly
-contrived role in Oberon0, is that of \textit{dispatch}.
-%
-It's often the case that the behavior of a production as a whole will end up
-very different depending, for example, what kind of identifier is referenced
-by a name, as determined by an environment lookup.
-%
-In the Silver compiler itself, for example, a global value lookup and a local
-value do not just have very different translations, but the type behavior is
-different too: globals are quantified and should have their type variable freshened
-before reporting a monotype, while locals are not.
-
-For Oberon0, we have a special handler for the builtin procedure \texttt{WriteLn}
-and so forth, becuase we need to give them a special translation.
-%
-To do this, the procedure call production \texttt{callDispatch} forwards to one
-of \texttt{call}, \texttt{writeLnCall}, etc based on the procedure name.
-\end{comment}
 
 \subsection{Code generation}
 
 %\emph{To complete.}
 
-This process is quite straight forward after the lambda-lifting
-transformation has been made.  After that, all variable names are
-unique and all procedures have been lifted up to the top level.  By
-priming the renaming process with the C keywords, we can be assured
-that they are not used as variable names.  Thus the generation of C
-code boils down to little more than using a synthesized \code{String}
-attribute to un-parse this Oberon0 AST using the concrete syntax of C.
+The code generation process is quite straight forward after the
+lambda-lifting transformation has been made.  After that, all variable
+names are unique and all procedures have been lifted up to the top
+level.  By priming the renaming process with the C keywords, we can be
+assured that they are not used as variable names.  Thus the generation
+of C code boils down to little more than using a
+synthesized \code{String} attribute to un-parse this Oberon0 AST using
+the concrete syntax of C.
 
+\begin{comment}
 \subsection{Artifacts (combination of tasks and sublanguages)}
 \label{silver:sec:artifacts}
 
@@ -767,6 +1039,7 @@ possibilities, not just the specified artifacts.
 * parser specification
 * build..with - a dependency on inclusion of other components.
   "It was used for problem X to include Y when Z was included."
+\end{comment}
 
 \subsection{Observations}
 \label{silver:sec:observations}
@@ -776,8 +1049,9 @@ weaknesses of Silver.   The module system and use of forwarding allows
 one to develop languages in a highly modular manner.   On the
 other-hand, Silver is missing some helpful features such as a means for
 specifying abstract trees using concrete syntax and a mechanism for
-I/O that is less clumsy.
+I/O that is less clumsy, which are not shown here.
 
+\paragraph{Forwarding}
 Like many language specification techniques, forwarding lets one build
 up a language in layers, for example, the for-loop is built on top of
 the core L1 language.  Forwarding allows us to avoid defining the
@@ -796,6 +1070,8 @@ Unlike many language specification techniques, forwarding does not
 lock the language engineer into defining either all or none of the
 semantics of a new language feature.
 
+
+\paragraph{Modularity:}
 We were also pleased that we could specify the different artifacts of
 the challenge in such a modular manner.  The composition model of
 Silver is quite simple as it is just piece-wise set union of the
@@ -806,6 +1082,43 @@ across different grammars.  This allows for the rather modular
 specifications. 
 
 
+\paragraph{Analysis:}
+The real advantage of forwarding is in specifying composable, yet
+independently-developed language extensions.
+%
+Without forwarding there is a problem resolving different kinds of
+extensions: when one extension adds a new production, and another adds
+a new attribute, what of the intersection of defining the value of
+this new attribute on the new production?  This question is answered
+when the new production forwards to something in the ``host''
+language, on which the new attributes have been defined.
+%
+
+Silver has a modular analysis~\cite{kaminski12sle} that checks a
+single extension against the host language it extends.  If this
+analysis passes, then the extension is ``verified'' to be composable
+(without the writing of any additional glue code) with any other
+language extensions that have also passed the analysis and been so
+``verified.'' 
+
+Copper's has a modular determinism analysis~\cite{schwerdfeger09pldi}
+that ``verifies'' concrete syntax specifications and thus ensures that
+concrete syntax specifications of the composed language are such that
+there are no lexical ambiguities or conflicts in the generated LALR(1)
+parse table.
+
+Together, these analyses let independent parties develop
+general-purpose or domain-specific language extensions that a
+programmer, with no knowledge of the underlying attribute grammars or
+concrete syntax specifications, can direct the tools to combine to
+create a unique language with the features they desire.  This
+composition is guaranteed to work and result in attribute grammars
+that are complete (no missing equations) and scanners and parsers that
+have no ambiguities and can be parsed deterministically.
+
+
+\begin{comment}
+\paragraph{Missing Features:}
 On the other hand, there are some features and capabilities that
 Silver is missing.   Below is a list of many of these.  (\emph{We're
   not sure all of these will be relevant for the paper, it depends a
@@ -859,7 +1172,138 @@ Silver is missing.   Below is a list of many of these.  (\emph{We're
 \item Silver currently has no IDE support, but this is something we
   are actively working to address.
 \end{itemize}
+\end{comment}
 
-\subsection{Conclusions}\label{silver:sec:conclusion}
+%\subsection{Conclusions}\label{silver:sec:conclusion}
 
-To Do.
+%To Do.
+
+\begin{comment}
+\subsubsection{Forwarding in desugaring and composable language extensions}
+%\label{silver:sec:forwarding}
+
+The critical feature of forwarding is that it allows the language
+designer to choose what attributes are defined on a production for a
+new language contruct and what ones are handled by its 
+``desugared'' equivalent.
+%
+Without forwarding, the designer must provide attribute definitions
+for all attributes, something that can become tedious.
+%
+Forwarding is also different from macro expansion in which all
+attributes are computed on the expanded (desugared) construct.
+%
+
+This directly supports the language design pattern of defining a \emph{core}
+
+
+With forwarding the language designer does not have to make these
+``all or none'' sort of decisions.
+%
+\end{comment}
+
+\begin{comment}
+This ``desugaring" acts similarly to a macro expansion, but with a critical
+difference: the original tree is not lost or evaluated away.
+%
+Instead the original tree can still define the values of synthesized attributes.
+%
+For example, in order to prevent numerous error messages from being emitted,
+it will only allow the \texttt{errors} attribute to forward through to the
+expanded tree of declarations if there are no errors for the associated
+type expression (i.e. the lookup succeeded.)
+%
+
+This is a common pattern with forwarding: still do error checking on the
+``sugared" tree, so as to provide good error messages (unlike, say, template
+errors in C++, or errors that occur within macro expansions in Lisp, or
+the kind of error messages that result from complex type-level programming
+in Haskell,) but otherwise let the ``expanded" tree do the real work (translation
+and so forth.)
+
+Forwarding is one of the major features of Silver that can dramatically
+affect how specifications are written.
+%
+It ends up subsuming some of the role of many other features often found in
+language processing tools: higher-order attributes, rewrite rules, desugaring,
+inheritance, and macros. %, to start.
+\end{comment}
+
+
+
+\begin{comment}
+%\paragraph{Language extensions}
+%
+While for desugaring, it is merely a convenience, for extension is it essential.
+%
+
+
+
+For the Oberon0 specification, most of the components that are defined separately do
+not qualify as ``composable" language extensions, because they do not have a
+semantic equivalent in the host language.
+%
+For example, though it might be theoretically possible for procedures to
+be translated away, it is not practical to do so.
+%
+In this case, the procedures extension must provide a conditional build trigger
+to include its contributions to how translation to C should proceed, whenever both
+these components are included.
+
+But, for the control flow example, this is not necessary.
+%
+This is because the control flow extensions \textit{do} have semantic
+equivalents in the host language.
+%
+The \texttt{FOR} and \texttt{CASE} statements forward to equivalent
+\texttt{WHILE} and \texttt{IF} statements respectively.
+%
+As a result, any query for the values of attributes can simply be forwarded to
+the equivalent tree in the host language where these attributes are defined.
+%
+It is worth pointing out that this functions despite some complexity in the
+translation: it does renaming, and a full transformation of the tree, before
+finally generating the C code.
+%
+And nowhere does any of it have to worry about these control flow statements.
+\end{comment}
+
+\begin{comment}
+% We say this above
+The control flow extension \textit{does} provide equations for type checking,
+however, for the same reason some type checking was done for desugaring previously:
+error message quality.
+%
+Although the transformed trees should be semantically equivalent, that only
+extends to whether it is accepted/rejected by analysis, not whether the error
+messages generated are sensible.
+%
+It would be very confusing to see an error about an \texttt{IF} condition
+not being a boolean when the program contains a \texttt{CASE} statement, instead.
+%
+By providing definitions for attributes involved in type checking, we can
+get not only nice error messages, but also ensure the safety of composition.
+\end{comment}
+
+\begin{comment}
+\paragraph{Dispatching} % We might cut this section for length TODO
+Forwarding takes on many roles in Silver specifications.
+%
+One common one in larger compilers, that's we've forced to take a slightly
+contrived role in Oberon0, is that of \textit{dispatch}.
+%
+It's often the case that the behavior of a production as a whole will end up
+very different depending, for example, what kind of identifier is referenced
+by a name, as determined by an environment lookup.
+%
+In the Silver compiler itself, for example, a global value lookup and a local
+value do not just have very different translations, but the type behavior is
+different too: globals are quantified and should have their type variable freshened
+before reporting a monotype, while locals are not.
+
+For Oberon0, we have a special handler for the builtin procedure \texttt{WriteLn}
+and so forth, becuase we need to give them a special translation.
+%
+To do this, the procedure call production \texttt{callDispatch} forwards to one
+of \texttt{call}, \texttt{writeLnCall}, etc based on the procedure name.
+\end{comment}
