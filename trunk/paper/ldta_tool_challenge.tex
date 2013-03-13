@@ -251,13 +251,69 @@ different tools and techniques. The goal was to create a discussion that fosters
 among tool developers and tool users, of relative strengths and weaknesses of different language 
 processing tools, techniques, and formalisms.''.\footnote{www.ldta.info/2011/tool.html}
 
+This paper is describes the tool challenge in detail. The paper does not address a specific scientific
+aspect on language description or tool usage. So, one can ask the questions; why a tool challenge
+and why to write such a lengthy paper about this tool challenge? The goal was to see how the various
+tools would be able to deal with the tasks set by the challenge. The outcome is not only a comparison of 
+the tools involved, but also a reflection on why are these tools not yet mainstream technology in the area
+of compiler construction. An observation is that the systems involved play an (important) role when
+describing domain specific languages. They offer a short turn-around time with respect to rapid prototyping
+of languages.
+However, the challenge shows that the tools are powerful enough to implement a full compiler on a 
+high level of abstraction. 
+
+The first step in establishing the tool challenge
+was the selection of the programming language that had to be specified. It is obvious that a full blown
+language like Java was out of scope. The language had to be non-trivial but not too complex. Furthermore,
+a decent description of the language should be available with a precise definition of the syntax and
+more important a non-ambigous definition of the semantics. Having a reference compiler would make the
+language complete. The Oberon language \cite{Wirth96} developed by Wirth turn out to fulfill all the
+requirements formulated above. The Oberon language is presented in Section \ref{sec:oberon}.
+
+The challenge was split into five tasks. The tasks are traditional compiler tasks when implementing a compiler
+for an imperative programming language.
+\begin{description}
+\item[T1] \emph{Parsing and pretty printing.} The goal is to build a tool that reads in the programs, constructs
+the corresponding parse tree, and then pretty-prints the parse tree. 
+\item[T2] \emph{Name binding.} The goal of this task is to build a tool that reads in syntactically valid programs
+and binds all name uses to their declarations. If a name is not declared or declared more than once an error
+message should be generated.
+\item[T3] \emph{Type checking.} The goal of this task is to check that the program does not contain
+type errors. If a type error is found, an appropriate error message should be generatoed. 
+The implemented solutions should provide informative and helpful error message at an
+appropriate abstraction level.
+
+\item[T4] \emph{Source-to-source transformations.}
+There are two source-to-source transformation tasks.
+\begin{description}
+\item[T4a] The first task focusses on the translation of language features introduced
+in extended versions of the languages to language constructs in a basic (implemented)
+version of the language. For instance, control flow constructs introduced in the extended
+version, L2 (see Section \ref{ref:oberon}), should be translated to the core language. L1.
+\item[T4b] The second taks focusses on more traditional optimizations. One can think of
+constant propagation, dead code elimination, common sub-expression elimination, and
+strength reduction.
+\end{description}
+\item[T5] \emph{Code generation.}
+There are also two code generation tasks.
+
+\begin{description}
+\item[T5a] The first task consists of translating the Oberon language to ANSI-C. This code generation step is rather
+straightforward because of Oberon and C share many language constructs.
+\item[T5b] The second task consists of translating Oberon to a lower-level language: Wirth's DLX, a simple RISC assembly
+language. The optimizations of Task T4b may also be applied on the generated DLX code.
+\end{description}
+\end{description}
+
+The challenge had an open call for participation and the first results where presented at the LDTA workshop
+in 2011. 
+Although that more systems where presented at the workshop, seven systems contributed to this paper.
+Each of the systems is a separate section in the paper, where the sections describe the characteristics
+of the system and the findings when writing the specifications.
 
 \begin{itemize}
 \item How to read the paper?
 \item Systems involved
-\item Scanning and parsing
-\item Name analysis and type checking
-\item Source to source translation and code generation
 \item Handling of artifacts
 \end{itemize}
 
