@@ -9,7 +9,8 @@ OCaml consistently incorporates object-oriented traits --- objects and classes w
 structural subtyping, rich module system with first-class modules and \emph{functors} (that is, 
 modules parameterized by other modules) which makes it a full-fledged multiparadigm programming
 language. In addition OCaml is equipped with a syntax extension tools --- 
-CamlP4\footnote{http://brion.inria.fr/gallium/index.php/Camlp4}/CamlP5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} --- which allow to extend the host language with domain-specific constructs. 
+CamlP4\footnote{http://brion.inria.fr/gallium/index.php/Camlp4}/CamlP5\footnote{http://pauillac.inria.fr/\textasciitilde ddr/camlp5/} 
+--- which allow to extend the host language with domain-specific constructs. 
 
 We argue that in its present state OCaml is already rich enough to be directly used as an 
 implementation formalism for all the tasks listed for the tool challenge. Apart from parsing and 
@@ -99,7 +100,7 @@ structures we have to provide extension function with it's own extension functio
 should be able to transform the all nodes of expression, including \lstinline{`Add} and
 \lstinline{`Sub}. This extension function (``\lstinline{self}'') is acquired by partial
 application \lstinline{evalAddSub} to \lstinline{ext}. Note that we just provided some 
-transformer for the \emph{incomplete}, or \emph{open}, type since actually no (final) 
+transformer for the \emph{incomplete}, or \emph{open}, type since actually no (finite) 
 expression can be constructed using only \lstinline{`Add} and \lstinline{`Sub}. 
 
 Now we provide similar extensible function for evaluating identifiers in some state 
@@ -251,7 +252,7 @@ let evalAddSubIdent s =
   gmapIdent (object method ident _ n = s n end)
 \end{lstlisting}
 
-In this approach we can easily construct transformations via combining and
+Using this approach we can easily construct transformations via combining and
 extending the predefined set of object-encoded per-type transformers; in 
 particular the following transformer generator was extensively used in the course
 of the implementation (as always we show the version for \lstinline{`Add}-\lstinline{`Sub}
@@ -316,6 +317,33 @@ let imap t ext expr =
   let module M = Mapper (Monad.Id) in
   M.gmap t ext expr
 \end{lstlisting}
+
+Another important issue is the support for parametrically-polymorphic types since parametric polymorphism 
+is extensively used in OCaml implementation. For example, the type of AST for statements is parameterized
+by types of expressions and references. First, this representation allows to express some correctness 
+properties (for example, only references can reside in the left side of assignment statement); second, code
+reuse is facilitated since the same generic implementation can be utilized for the languages with different
+assortment of expressions and references. Similarly, extended statements (FOR- and CASE-) are represented
+by type, parameterized by types of expressions, constant expressions and references etc.
+
+In short, the transformers for parametrically-polymorphic types are high-order functions which takes transformers 
+for type parameters as auxiliary arguments. For example, the versions of monad-specific transformers for
+extended statements are given below:
+
+\begin{lstlisting}[language=ocaml]
+let imap t ref cexpr expr ext stmt =
+  let module M = Mapper (Monad.Id) in
+  M.gmap t ref cexpr expr ext stmt
+
+let cmap t ref cexpr expr ext stmt =
+  let module M = Mapper (Monad.Checked) in
+  M.gmap t ref cexpr expr ext stmt
+\end{lstlisting}
+
+Here \lstinline{ref}, \lstinline{cexpr} and \lstinline{expr} are auxiliary arguments for transforming 
+types of references, constant expressions and general-form expressions. Arbitrary functions can
+be provided as these arguments as long as their types are admissible.
+
 
 \subsection{Scanning, parsing and pretty-printing}
 
@@ -722,13 +750,14 @@ END L.
 \subsection{Code generation}
 
 There is no dedicated code generation pass in OCaml implementation --- we consider C representation
-as an alternative concrete syntax for the name-resolved (and lifted) AST. Pretty-printers for the relevant
-structures (simple expressions with L4 references, simple statements with procedure calls, 
+as an alternative concrete syntax for the name-resolved (and lifted) AST. We need to use a name-resolved
+tree since in Oberon-0 the usages of VAR-parameters of procedures are not distinguished syntactically from the usages
+of non-VAR parameters while in C additional dereference operators should be generated. So we need to know
+the kinds of all identifiers in expressions which are determined during the name analysis phase.
+
+Pretty-printers for the relevant structures (simple expressions with L4 references, simple statements with procedure calls, 
 type-, variable- and procedure declarations) are implemented in a generic form: they take a
-printing scheme which encapsulates the concrete syntax elements as an additional
-parameter. Note that we need a name-resolved tree to distinguish, for example, referenced-passed
-function parameters from value-passed ones in both function argument declaration list, all
-their usages within the function body and actual parameters of function invocation.
+printing scheme which encapsulates the concrete syntax elements as an additional parameter. 
 
 \subsection{Artifacts}
 
