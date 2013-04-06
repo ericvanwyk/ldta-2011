@@ -33,12 +33,12 @@ The module-wise structure of OCaml implementation is shown on Figure~\ref{ocamlm
 was converted from the actual \verb|Makefile| dependency include; some auxiliary utility modules were
 omitted. Square-shaped nodes designate language components while circle-shaped stand for the 
 language toplevels. Black edges emphasize a transitive reduction of module dependency relation which corresponds 
-to the inter-language dependency. Each language component provides the parametrized solutions for all
+to the inter-language dependency. Each language component provides the parameterized solutions for all
 tasks of the challenge for the certain syntactic category. Most of them are expressed in terms of
-type-driven transformers. The parametrization allows to reuse the same functionality in a various
+type-driven transformers. The parameterization allows to reuse the same functionality in a various
 concrete contexts --- for example, module \verb|VarDecl| implements \emph{generic} variable declaration
-construct parametrized by a type representation; this implementation provides parser, pretty-printer, name resolver,
-typechecker etc., each of which are in turn parametrized by the respective functionality for type representation.
+construct parameterized by a type representation; this implementation provides parser, pretty-printer, name resolver,
+typechecker etc., each of which are in turn parameterized by the respective functionality for type representation.
 As a result the same separately compiled code is used to implement variable declarations in languages
 L1-L3 (where only base types are allowed) as well as in L4-L5 (where composite types are added). This approach
 allows to combine language implementations from precompiled reusable components as long as we deal with the extending
@@ -53,7 +53,7 @@ massively used in OCaml implementation. Namely, all the tasks excluding parsing
 are expressed using solely the transformers of this kind. ``Type-driven'' means that
 the semantics of transformers is completely determined by the transforming type; 
 so all transformers can be constructed mechanically from the type definitions.
-The converse is also true --- the type-driven transformer unambigiously defines
+The converse is also true --- the type-driven transformer unambiguously defines
 some type. We heavily utilize this property --- actually there is not a single 
 type definition in the implementation: all types are introduced implicitly 
 and inferred from the transformation functions. Another property of transformers
@@ -117,10 +117,10 @@ let rec evalIdent s ext expr =
 Note that the semantics of these functions is almost completely type-driven; despite
 we do not have any type declaration here we actually think in terms of types, not
 in terms of implementation details. The only concrete implementation-dependent feature
-is the essense of constructor-specific transformation; we'll get rid of this specificity 
+is the essence of constructor-specific transformation; we'll get rid of this specificity 
 later. Note also that these functions are completely independent of each other; thus, they 
 can be implemented in a different compilation units or provided at arbitrary moments of 
-program execution; this difference distingushes the approach under considerations from that 
+program execution; this difference distinguishes the approach under considerations from that 
 described in~\cite{PVReuse}.
 
 It is easy to see that certain combination (namely, type sum, or union) of open types 
@@ -266,7 +266,7 @@ let mapT f = object
 \end{lstlisting}
 
 The final generalization consists of ``lifting'' the transformation functions
-over some monad~\cite{Monads}. Since the only way in OCaml to parametrize over a
+over some monad~\cite{Monads}. Since the only way in OCaml to parameterize over a
 type constructor is to use functors we encode monads with the following \emph{module type}:
 
 \begin{lstlisting}[language=ocaml]
@@ -300,7 +300,7 @@ module Mapper (M : Monad.S) =
   end
 \end{lstlisting}
 
-Lifing over a monad allows to express some additional features of transformations
+Lifting over a monad allows to express some additional features of transformations
 such as error processing etc.
 
 For the implementation of Oberon-0 we used three monads --- a variant of exception monad 
@@ -323,7 +323,7 @@ is extensively used in OCaml implementation. For example, the type of AST for st
 by types of expressions and references. First, this representation allows to express some correctness 
 properties (for example, only references can reside in the left side of assignment statement); second, code
 reuse is facilitated since the same generic implementation can be utilized for the languages with different
-assortment of expressions and references. Similarly, extended statements (FOR- and CASE-) are represented
+assortments of expressions and references. Similarly, extended statements (FOR- and CASE-) are represented
 by type, parameterized by types of expressions, constant expressions and references etc.
 
 In short, the transformers for parametrically-polymorphic types are high-order functions which takes transformers 
@@ -387,7 +387,7 @@ and \lstinline{oseq} --- which are defined in a separate module. \lstinline{key}
 its string argument making sure that the next symbol is a word delimiter while \lstinline{oseq}
 parses a possibly empty semicolon-delimited items specified by its argument. Note that 
 parameterization by statement parser \lstinline{stmt} makes the whole parser \emph{open} ---
-it parses wider language than merely assing-if-while with assign-if-whiles as substatements.
+it parses wider language than merely assign-if-while with assign-if-whiles as substatements.
 
 The definition of parser becomes closed at the client level; for example, L1-statements
 parsed with the following parser:
@@ -471,11 +471,11 @@ the following:
 
 \begin{lstlisting}[language=ocaml]
 let resolve ref cexpr expr ext stmt =
-  cmap ext 
-       (mapT (fun _ s -> Monad.Checked.return s)) 
+  cmap (mapT (fun _ s -> Monad.Checked.return s)) 
        ref 
        cexpr 
        expr 
+       ext        
        stmt
 \end{lstlisting}
 
@@ -485,7 +485,7 @@ checking function, ``\lstinline{expr}'' --- to the generic expression checking f
 so actually we perform kind analysis by discriminating the cases already encoded in
 the AST data structure in a type-parametric manner. 
 
-Each expression checking function is itself aquired by applying the type-driven transformer 
+Each expression checking function is itself acquired by applying the type-driven transformer 
 for expressions to a reference-checking routine of a certain kind. For example, the expression 
 name analysis for L1 is encoded in the following manner:
 
@@ -502,7 +502,7 @@ let expression env expr =
 \end{lstlisting}
 
 Here ``\lstinline{ext}'' is an extension for name-analysis function for references. This 
-extension is provided later in the extended languges to handle the references of other kinds.
+extension is provided later in the extended languages to handle the references of other kinds.
 
 Name analysis converts the initially parsed AST into the structure of incompatible 
 type. From one hand this approach enforces the safety of the compiler since, for example, an attempt
@@ -563,32 +563,55 @@ of statements. The skeleton code for the transformation is as follows:
 
 \begin{lstlisting}[language=ocaml]
 let lower ext stmt =
+  (* Instantiating transformers for simple and extended 
+     statements for list monad
+  *)
   let module M = SimpleStatement.Mapper (Monad.List) in 
   let module E = ExtendedStatement.Mapper (Monad.List) in
-  M.gmap 
-    (fun self stmt ->
-       E.gmap (ext self)
-              (object
-                 method case _ e b s = ...
-                 method forc _ i l u s b = ...
-               end
-              ) 
-              Monad.List.return 
-              Monad.List.return 
-              Monad.List.return 
-              stmt
-    )
+
+  (* Lowering is expressed as monadic transformer of simple
+     statements extended by monadic transformer of extended
+     statements 
+  *)
+  M.gmap     
+    (* For simple statements concrete transformation is
+       trivial
+    *)
     (SimpleStatement.mapT (fun _ s -> [s])) 
-    Monad.List.return 
-    Monad.List.return
+    Monad.List.return (* trivial transformer for references  *)
+    Monad.List.return (* trivial transformer for expressions *)
+
+    (fun self stmt ->
+       (* Extension: monadic transformer for extended statements *)       
+       E.gmap 
+          (* Object-encoded transformation: all non-trivial
+             work is done here
+          *)
+          (object
+             method case _ e b s = ...
+             method forc _ i l u s b = ...
+           end
+          ) 
+          Monad.List.return (* trivial transformer for references *)
+          Monad.List.return (* trivial transformer for constant 
+                               expressions 
+                            *)
+          Monad.List.return (* trivial transformer for expressions *)
+          (ext self)        (* ``fixpoint'' extension *)
+          stmt
+    )
     stmt
 \end{lstlisting}
+
+Since the type of statements is polymorphic we need to supply functions to transform
+type parameters. In this case these functions are just \lstinline{Monad.List.return}
+since no transformation is performed on expression or reference levels.
 
 Here ``\lstinline{ext}'', as usually, stands for the extension transformation. This skeleton
 code just propagates the lowering transformation through all the constructs of the AST. All
 nontrivial work is done by methods ``\lstinline{case}'' and 
 ``\lstinline{forc}''\footnote{``\lstinline{for}'' is a reserved word in OCaml.} which are 
-called when the corresponding construct is encountered in the tree. Multiple occurrencies of \lstinline{Monad.List.return}
+called when the corresponding construct is encountered in the tree. Multiple occurrences of \lstinline{Monad.List.return}
 correspond to the identity monadic wrappings of those parts of the AST which are not 
 considered as the subject for the transformation (references, constant expressions, expressions etc.)
 
