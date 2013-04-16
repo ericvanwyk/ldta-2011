@@ -45,24 +45,97 @@ sensitive=true
 
 \subsection{Introduction}
 
-CoCoCo\footnote{\url{http://www.cs.uu.nl/wiki/bin/view/Center/CoCoCo}} is a set of libraries and tools in the form of a collection of embedded domain specific languages (EDSL) for constructing extensible compilers,
+CoCoCo\footnote{Compositional Compiler Construction - \url{http://www.cs.uu.nl/wiki/bin/view/Center/CoCoCo}} is a set of libraries and tools in the form of a collection of embedded domain specific languages (EDSL) for constructing extensible compilers,
 where compilers can be composed out of \emph{separately compiled}  
 language-definition fragments. The Haskell type system  not only checks the expressions inside a component, but also the mutual consistency of a collection of components. Our approach builds on:
 \begin{itemize}
 %\item the introduction of typed abstract syntax \cite{BaSw02}
-\item the introduction of a naming structure which makes it possible to represent mutually dependent 
-recursive structures such as context free grammars and to inspect and manipulate such structures in a type-safe way \cite{BSV09}
-\item the description of typed grammar fragments as first class Haskell values \cite{VSD12}, and the typed Left-Corner Transform to remove left-recursion \cite{BSV09b}
+\item the possibility to represent mutually dependent 
+recursive structures, such as context free grammars, and to inspect and manipulate such structures in a type-safe way \cite{BSV09}
+\item the description of typed grammar fragments as first class Haskell values \cite{VSD12}
+\item the definition of a typed Left-Corner Transform (LCT), which removes left-recursion from a grammar; this enables us
+use top-down parsing techniques to build parsers out of grammar fragments \cite{BSV09b}
 \item the possibility to construct a self-analysing, error correcting parser on the fly \cite{Swie2000,Swierstra08}
 \item the possibility to deal with attribute grammars as first class  Haskell values, which can be transformed, composed and finally evaluated \cite{Viera:Attribute-Grammars,UU-CS-2011-028,VSM12}.
 \end{itemize}
 
  
 
-\subsection{Architecture and Parsing}
+\subsection{Architecture}
 
-Using our combinator library\footnote{\url{http://hackage.haskell.org/package/murder}} \cite{VSD12} we describe  the concrete syntax of each language fragment as a Haskell value.
-A fragment of the {\em code constructing the CFG} of the initial language L1 is given in Figure~\ref{fig:gram} in which we recognise the underlying left-recursive context free grammar.
+The architecture of our implementation of Oberon0 is given in Figure~\ref{fig:modules};
+boxes represent Haskell modules and arrows are \texthaskell{import} relations 
+(e.g. the module \texthaskell{L4.SemT5} imports \texthaskell{L4.SemT3} and \texthaskell{L3.SemT5}).
+Each module contains a collection of normal Haskell value definitions and can be compiled separately. 
+The design is incremental:  rows corresponds to syntactic extensions (language levels) and
+ columns corresponds to semantic extensions (tasks);
+each artefact in the challenge corresponds to a dashed box containing the modules involved in that artefact.
+\begin{figure}[th]
+\begin{center}
+	\includegraphics[scale=0.65]{cococo/modules.pdf}
+\caption{Architecture of the Oberon0 Implementation}
+\label{fig:modules}
+\end{center}
+\end{figure}
+For each language level \texthaskell{L1} to \texthaskell{L4}: 
+%
+\begin{itemize}
+	\item  \texthaskell{Gram} modules contain syntax definition in the form of first-class grammar fragments 
+	%(i.e. \texthaskell{L1.Gram} contains \texthaskell{l1}, \texthaskell{L2.Gram} contains \texthaskell{l2}, etc.)
+	\item \texthaskell{Decl} modules contain the definition of the type of the semantics' record, and thus the interface to the abstract syntax of the language at hand
+	\item \texthaskell{Sem} modules implement the semantics of each task in the form of rules which together construct an attribute grammar
+\end{itemize}
+%
+Notice that we do not include modules for Task 4. 
+In Subsection~\ref{sec:agmacro} we  explain how we get this task done almost for free by using attribute grammar macros when defining \texthaskell{L2} .
+
+To build a compiler, e.g. Artefact 4 (Figure~\ref{fig:A4}), we import the syntax fragments (\texthaskell{l1}, \texthaskell{l2}, 
+\texthaskell{l3} and \texthaskell{l4} 
+from \texthaskell{L4.Gram}) and their respective semantics (\texthaskell{l1t5}, 
+\texthaskell{l2t5}, \texthaskell{l3t5} and \texthaskell{l4t5} from \texthaskell{L4.SemT5}), 
+combine them and build the compiler in the form of a parser which calls semantic functions.
+\begin{figure}[th]
+\begin{minipage}[b]{0.5\linewidth}
+\begin{center}
+	\includegraphics[scale=0.6]{cococo/main.pdf}
+\caption{Architecture of Artefact 4}
+\label{fig:A4}
+\end{center}
+\end{minipage}
+\hspace{0.2cm}
+\begin{minipage}[b]{0.5\linewidth}
+\begin{haskell}
+gl4t5 = closeGram \$ emptyGram +>> 
+                    l1 l1t5   +>> 
+                    l2 l2t5   +>> 
+                    l3 l3t5   +>> 
+                    l4 l4t5
+
+pA4 = (parse . generate kws) gl4t5
+\end{haskell}
+\vspace{-15pt}
+\caption{A Parser for Artefact 4}
+\label{fig:pA4}
+\end{minipage}
+\hspace{0.5cm}
+\end{figure}
+In Figure~\ref{fig:pA4} we show how the parser of Artefact 4 is generated. 
+The left-associative operator (\texthaskell{+>>}) takes as its left-hand side operand a grammar and as its right-hand side operand a  transformation to be applied.
+We start with an empty grammar (\texthaskell{emptyGram}) and apply the different language extensions to it.
+The function \texthaskell{closeGram} closes the constructed grammar and applies the \emph{left-corner transform} in order to remove potentially introduced left-recursion; 
+as a consequence straightforward combinator-based top-down parsing techniques can be used in building the parser from the transformed grammar. 
+Then \texthaskell{generate kws} generates a parser integrated with the semantics for the language starting from the first non-terminal,
+where the list \texthaskell{kws} is a list of keywords extracted from the grammar description. 
+This takes care of the problem that something which is an identifier in an earlier language may become keyword in an extended  language. 
+The function \texthaskell{parse} finally  parses the input program and returns its semantics.
+In the actual implementation of Oberon0 we construct scanner-less parsers using the uu-parsinglib\footnote{\url{http://hackage.haskell.org/package/uu-parsinglib}} parser combinator library;
+%our library also provides  support for uulib\footnote{\url{http://hackage.haskell.org/package/uulib}} based parsers.
+
+\subsection{Syntax}
+
+
+Using our combinator library\footnote{MUtually Recursive Definitions Explicitly Represented - \url{http://hackage.haskell.org/package/murder}} \cite{VSD12} we represent  the concrete syntax of each language fragment as a Haskell value.
+A fragment of the code that constructs the Context-Free Grammar (CFG) of the initial language L1 is given in Figure~\ref{fig:gram}, in which we recognise the underlying left-recursive context free grammar.
 \begin{figure}[th]
 \begin{center}
 \begin{haskell}
@@ -87,19 +160,21 @@ l1 sf = proc _ -> do
 \label{fig:gram}
 \end{center}
 \end{figure}
-Each grammar fragment consists of a sequence of grammar transformations expressed in Haskell's arrow syntax \cite{507664}, each of the form \texthaskell{output <- transformation -< input}. Each transformation updates the implicitly maintained grammar description.
+Each grammar fragment consists of a sequence of grammar transformations expressed using Haskell's arrow syntax \cite{507664}, each of the form \texthaskell{output <- transformation -< input}. Each transformation is parameterised by \texthaskell{input} and updates the implicitly maintained grammar description binding additional results to \texthaskell{output}.
 New non-terminals (syntactic category) of the CFG are introduced using  \texthaskell{addNT} transformations, which take as input an initial set of productions for that non-terminal and returns a value which may be used in other transformations to refer to this new non-terminal.  Each right hand side of a production (alternative) is expressed in so-called \emph{applicative style} \cite{McB07},
-using idiomatic brackets \texthaskell{iI} and \texthaskell{Ii} to delineate the list of components constituting an alternative. Note that the resulting notation closely resembles a similar description in a dedicated language.  The Haskell type of an element determines the r\^ole the element plays in the parsing process and the final semantics of the alternative: \texthaskell{String} values are e.g. interpreted as keywords to be recognised, and carry no semantic value of their own, functions do not require any parsing (i.e. correspond to the empty token sequence) but carry a value which is the function value itself, and non-terminal references both have a parsing effect  and construct a semantic value.
+using idiomatic brackets\footnote{note that \texthaskell{iI} and \texthaskell{Ii} are plain Haskell values}  \texthaskell{iI} and \texthaskell{Ii} to delineate the list of components constituting an alternative. Note that the resulting  notation in Haskell closely resembles a similar description in a dedicated language.  The Haskell type of an element determines the role the element plays in the parsing process and the final semantics of the alternative: \texthaskell{String} values are e.g. interpreted as keywords to be recognised, and carry no semantic value of their own, functions do not require any parsing (i.e. correspond to the empty token sequence) but carry a value which is the function value itself (referring to the semantics associated to the abstract syntax nodes), 
+and non-terminal references both have a parsing effect  and construct a semantic value.
 Alternatives for the same non-terminal are combined with the \texthaskell{<|>} (choice) operator.
 
-The semantics of an abstract syntax tree is a Haskell function mapping inherited to synthesised attributes; attribute grammar evaluation can be performed without explicit scheduling, since we implicitly make use of Haskell's lazy evaluation. In case attributes have a circular definition we take the least fixed-point semantics, which usually leads to an infinite structure. Fortunately this is no problem with Haskell as a host language.
-The parameter \texthaskell{sf} in Figure~\ref{fig:gram}  contains the ``semantics of the language''; it is a record containing the semantics for all the productions, from which expressions like \texthaskell{pEExp sf} elect the appropriate element. Such functions compute the semantics of the recognised left hand side non-terminal of a production in terms of the semantics associated with the children of that production, which themselves are  functions mapping inherited to synthesised attributes.
+The semantics of an abstract syntax tree is represented by a Haskell function mapping inherited attributes to synthesised attributes; attribute grammar evaluation can be performed without explicit scheduling, since we implicitly make use of Haskell's lazy evaluation. In case attributes have a circular definition we take the least fixed-point semantics, which usually leads to an infinite structure. Fortunately this is no problem with Haskell as a host language.
+The parameter \texthaskell{sf} in Figure~\ref{fig:gram}  contains the ``semantics of the language''; it is a record containing a semantic function for each productions, from which expressions like \texthaskell{pEExp sf} select the appropriate element. Such a semantic function computes the semantics of the recognised left hand side non-terminal of a production in terms of the semantics associated with the children of that production, which themselves are again functions mapping inherited to synthesised attributes.
 
 
-Grammars defined in this way are \emph{extensible}, since further transformations may be applied to the grammar under construction in other modules.  
+Grammars defined in this way are \emph{extensible}, since further transformations may be applied to the grammar under construction, typically  in other modules.  
 Each grammar exports (with \texthaskell{exportNTs}) its starting point (e.g. \texthaskell{modul}) and a table  of
 \emph{exported non-terminals}, each consisting of a label (by convention of  the
-form \texthaskell{cs_...}) and a reference to the current definition of that non-terminal, again a plain Haskell value which can be used and modified in future extensions.
+form \texthaskell{cs_...}) and a reference to the current definition of that non-terminal in ht implicitly maintained record, again a plain Haskell value which can be used and modified in future extensions.
+
 Figure~\ref{fig:gram2} contains a fragment of the definition of L2, 
 which extends the L1 grammar with a \textoberon{CASE} statement.
 \begin{figure}[th]
@@ -120,81 +195,17 @@ l2 sf = proc imported -> do
 \label{fig:gram2}
 \end{center}
 \end{figure}
-We start by retrieving references to all non-terminals which are to be extended or used (using \texthaskell{getNT}) from the \texthaskell{imported} non-terminals.
-We add new productions to existing non-terminals with \texthaskell{addProds}; this does not lead to references to new non-terminals.
-New non-terminals can stikk be introduced as well using \texthaskell{addNT}.
+We start by retrieving references to all non-terminals which are to be extended or used (using \texthaskell{getNT}) from the collection of\texthaskell{imported} non-terminals.
+We add new productions to existing non-terminals with \texthaskell{addProds}; since this does not lead to references to new non-terminals the \texthaskell{output} part of the arrow construct is omitted.
+New non-terminals can still be introduced as well using \texthaskell{addNT}.
 The Haskell type-system ensures that 
 the \texthaskell{imported} list indeed contains a table with entries \texthaskell{cs_Statement}, 
 \texthaskell{cs_Expression} and \texthaskell{cs_MaybeElseStmt}, 
 and that the types of these non-terminals coincide with their use in the semantic functions of
 the extensions.
 
-The definition in Figure~\ref{fig:gram2} may look a bit verbose, caused by  the interface having been made explicit. 
+The definition in Figure~\ref{fig:gram2} may look a bit verbose, but this is caused by the interface having been made explicit. 
 Using some Template Haskell this can  easily be overcome.
-
-The architecture of our implementation of Oberon0 is given in Figure~\ref{fig:modules};
-boxes represent Haskell modules and arrows are \texthaskell{import} relations, where every module can be compiled separately and results in a set of normal Haskell value definitions. 
-The design is incremental:  rows corresponds to syntactic extensions (language levels) and
- columns corresponds to semantic extensions (tasks);
-each artifact in the challenge corresponds to a dashed box surrounding the modules involved in it.
-\begin{figure}[th]
-\begin{center}
-	\includegraphics[scale=0.65]{cococo/modules.pdf}
-\caption{Architecture of Oberon0}
-\label{fig:modules}
-\end{center}
-\end{figure}
-For each language level \texthaskell{L1} to \texthaskell{L4}: 
-\begin{itemize}
-	\item  \texthaskell{Gram} modules contain  syntax definition (i.e. \texthaskell{L1.Gram} contains \texthaskell{l1}, \texthaskell{L2.Gram} contains \texthaskell{l2}, etc.)
-	\item \texthaskell{Decl} modules contain the definition of the type of the semantics' record, and thus the interface to the abstract syntax of the language at hand
-	\item \texthaskell{Sem} modules implement the semantics of each task in the form of rules which construct an attribute grammar
-\end{itemize}
-
-To build a compiler, e.g. Artifact 4 (Figure~\ref{fig:A4}), we import the syntax fragments (\texthaskell{l1}, \texthaskell{l2}, 
-\texthaskell{l3} and \texthaskell{l4} 
-from \texthaskell{L4.Gram}) and their respective semantics (\texthaskell{l1t4}, 
-\texthaskell{l2t4}, \texthaskell{l3t4} and \texthaskell{l4t4} from \texthaskell{L4.Sem}), 
-combine them and build the compiler in the form of a parser which calls semantic functions.
-\begin{figure}[th]
-\begin{minipage}[b]{0.5\linewidth}
-\begin{center}
-	\includegraphics[scale=0.6]{cococo/main.pdf}
-\caption{Architecture of Artifact 4}
-\label{fig:A4}
-\end{center}
-\end{minipage}
-\hspace{0.2cm}
-\begin{minipage}[b]{0.5\linewidth}
-\begin{haskell}
-gl4t5 = closeGram \$ emptyGram +>> 
-                    l1 l1t5   +>> 
-                    l2 l2t5   +>> 
-                    l3 l3t5   +>> 
-                    l4 l4t5
-
-pA4 = (parse . generate kws) gl4t5
-\end{haskell}
-\vspace{-15pt}
-\caption{A Parser for Artifact 4}
-\label{fig:pA4}
-\end{minipage}
-\hspace{0.5cm}
-\end{figure}
-In Figure~\ref{fig:pA4} we show how the parser of Artifact 4 is generated. 
-The left-associative operator (\texthaskell{+>>}) composes an initial grammar with an extension;
-we start with an empty grammar (\texthaskell{emptyGram}) and extend it with the different language fragments.
-The function \texthaskell{closeGram} closes the constructed grammar and applies the \emph{left-corner transform} in order to remove potential left-recursion; 
-as a consequence straightforward combinator-based top-down parsing techniques can be used in building the parser. 
-Then \texthaskell{generate kws} generates a parser integrated with the semantics for the language starting from the first non-terminal,
-where the list \texthaskell{kws} is a list of keywords extracted from the grammar description. 
-This takes care of the problem how to make sure that some identifiers in earlier challenges may become keywords in later challenges. 
-The function \texthaskell{parse} performs the parse of the input program and computes the meaning of that program.
-In the actual implementation of Oberon0 we generate scanner-less uu-parsinglib\footnote{\url{http://hackage.haskell.org/package/uu-parsinglib}} parsers;
-%our library also provides  support for uulib\footnote{\url{http://hackage.haskell.org/package/uulib}} based parsers.
-
-
-
 
 
 \subsection{Aspect Oriented Semantics}
@@ -202,7 +213,7 @@ The semantics of Oberon0 were implemented using the
 AspectAG\footnote{\url{http://hackage.haskell.org/package/AspectAG}}
 \cite{Viera:Attribute-Grammars} embedding of attribute grammars in Haskell.  
 In order to be able to redefine attributes or to add new attributes later, 
-it encodes the lists of inherited and synthesized attributes of a
+it encodes the lists of inherited and synthesised attributes of a
 non-terminal as an HList-encoded \cite{KLS04} value; each attribute is associated with a unique type which is used as an index in such a ``list''. The lookup process is performed by the Haskell class mechanism.  
 In this way the \emph{closure test} of the attribute grammar
 (each attribute has a single definition) is implicitly realised by the Haskell compiler when building the right instances of the classes.
@@ -210,15 +221,44 @@ Thus, attribute grammar fragments can be individually
 type-checked, compiled, distributed and composed to construct a
 compiler.  
 
+\subsubsection{Pretty-Printing}
+
+Pretty-printing is implemented by a synthesised attribute, 
+called \texthaskell{spp}\footnote{By convention we use the prefix \texthaskell{i} and \texthaskell{s} for inherited and synthesised attributes, respectively.}, 
+using the pretty-printing combinators provided by the uulib\footnote{\url{http://hackage.haskell.org/package/uulib}} package.
+
+Attributes have to be defined for each production of the abstract syntax tree. 
+For example, the following code defines the attribute \texthaskell{spp} for the production \texthaskell{CstDecl}, for declarations of constants.
+%
+\begin{haskell}
+sppCstDecl = syn spp $ do 
+               nm  <- at ch_id_CstDecl
+               exp <- at ch_exp_CstDecl
+               return $ value nm >#< "=" >#< exp # spp >|< ";"
+\end{haskell}
+%
+The production has two children: \texthaskell{ch_id_CstDecl}, of type \texthaskell{(DTerm String)}\footnote{\texthaskell{DTerm a} is the type used by murder to represent \emph{attributed terminals} (i.e. identifiers, values); it encodes the value (\texthaskell{value}) and position in the source code (\texthaskell{pos}) of the terminal.},
+and \texthaskell{ch_exp_CstDecl}, an expression node.
+The besides combinator \texthaskell{(>#<)} is used to combine the string value of \texthaskell{ch_id_CstDecl}, the string \texthaskell{"="},
+the pretty-printed value of the child \texthaskell{ch_exp_CstDecl} and the string \texthaskell{";"}.
+
+We construct the semantic functions for the productions by applying the \texthaskell{knit} function to the
+(composed) aspects of a given task. This function connects the local attribute flow of the production, as described by the composed aspects, with the flow from the inherited to the synthesised attributes of the children in order to construct the flow from the inherited attributes of the root node to its synthesised  attributes.
+In the case of Task~1 the aspects of the production \texthaskell{CstDecl}  consist of the single attribute \texthaskell{spp}.
+\begin{haskell}
+aspCstDecl = sppCstDecl
+\end{haskell}
+
+
 \subsubsection{Name analysis}
 Error messages produced by the name analysis are collected in 
-a synthesized attribute called \texthaskell{serr}\footnote{By convention we use the prefix \texthaskell{i} and \texthaskell{s} for inherited and synthesized attributes, respectively.}.
-The default behaviour of this attribute for most of the productions is to combine (append) the errors produced by 
-the children of the production.
-This behaviour is captured by the  function \texthaskell{use} from the AspectAG library, 
+a synthesised attribute called \texthaskell{serr}.
+The default behaviour of this attribute for most  productions is to concatenate the errors produced by 
+its children.
+To capture this pattern we introduce a generic rule |serrRule| computing this attribute using the  function \texthaskell{use} from the AspectAG library, 
 which takes as arguments the label of the attribute to be defined (\texthaskell{serr}), 
-the Haskell list of non-terminals (labels) for which the attribute is defined (\texthaskell{serrNTs}), 
-an operator for combining the attribute values (\texthaskell{++}), 
+the Haskell list of non-terminals (labels) for which the attribute is to be defined (\texthaskell{serrNTs}), 
+an operator telling how to  combine the attribute values (\texthaskell{++}), 
 and a unit value to be used when none of the children has such an attribute (\texthaskell{[]::String}).
 \begin{haskell}
 serrRule = use serr serrNTs (++) ([] :: [String]) 
@@ -227,7 +267,7 @@ When a new name is defined we check for multiple declarations and at
 name uses we check for incorrect uses or uses of undefined identifiers, producing error messages when appropriate.
 The code below shows the definition of \texthaskell{serr} for the use of an identifier
 represented by a production
-\texthaskell{IdExp}, which has a child named \texthaskell{ch_id_IdExp} of type \texthaskell{(DTerm String)}\footnote{\texthaskell{DTerm a} is the type used by murder to represent \emph{attributed terminals} (i.e. identifiers, values); it encodes the value (\texthaskell{value}) and position in the source code (\texthaskell{pos}) of the terminal.}.
+\texthaskell{IdExp}, which has a child named \texthaskell{ch_id_IdExp} of type \texthaskell{(DTerm String)}.
 \begin{haskell}
 serrIdExp = syn serr \$ do 
     lhs <- at lhs
@@ -240,7 +280,7 @@ and, if it is defined, we verify that the name represents either a variable (\te
 or a constant (\texthaskell{"Cst"}) and generate  a proper error message if not.
 
 The symbol table is implemented by the pair of attributes \texthaskell{senv} and \texthaskell{ienv}.
-The synthesized attribute \texthaskell{senv} collects the information from the name declarations
+The synthesised attribute \texthaskell{senv} collects the information from the name declarations
 and the inherited attribute \texthaskell{ienv} distributes this information through the tree.
 
 In order to perform the name analysis, the type of the symbol table could have been 
@@ -262,9 +302,9 @@ senvCstDecl r = syn senv \$ do
                   return \$ Map.singleton (value nm) 
                                          (SI (cstDef \$ pos nm) r)
 \end{haskell}
-Similarly to how we used \texthaskell{use} for the default cases of synthesized attributes,
-we capture the behaviour of distributing an inherited attribute to the children of a production
-with the function \texthaskell{copy}:
+Similarly to how we used \texthaskell{use} for the default cases of synthesised attributes,
+we can capture the behaviour of distributing an inherited attribute to the children of a production
+with the function \texthaskell{copy} form the AspectAG library:
 \begin{haskell}
 ienvRule _ = copy ienv ienvNTs 
 \end{haskell}
@@ -285,7 +325,7 @@ since the rest of the information is not needed by the rules of Task 2.
 
 \subsubsection{Type checking}
 
-Type error messages are collected in the synthesized attribute \texthaskell{sterr}.
+Type error messages are collected in the synthesised attribute \texthaskell{sterr}.
 For type checking we extend the symbol table with the type information (\texthaskell{TInfo}) of the declared names.
 This is done by \emph{updating} the value of the attribute \texthaskell{senv} with the function \texthaskell{synupdM}, 
 which is similar to \texthaskell{syn} but redefines it making use of its current definition. 
@@ -368,59 +408,63 @@ checkSelArray pos ty ind
      _                  -> [show pos ++ 
                             ": Accessed variable is not an array"] 
 \end{haskell}
-We use the same technique to keep information about the fields of a \textoberon{RECORD}
+We use the same technique to store information about the fields of a \textoberon{RECORD}
 and the parameters of a \textoberon{PROCEDURE}.
 
 \subsubsection{Source-to-source transformation}
+\label{sec:agmacro}
 
 In \cite{VS12} we extended AspectAG with an \texthaskell{agMacro} combinator that enables us
 to define the attribute computations of a new production in terms of the attribute computations of existing productions.
 We defined the semantics of the extensions of the language level L2 using this macro mechanism.
 The \textoberon{FOR}-loop is implemented as a \textoberon{WHILE}-loop 
 and the \textoberon{CASE} statement is defined in terms of an \textoberon{IF}-\textoberon{ELSIF}-\textoberon{ELSE} cascade.
-In the cases were specialized behaviour is needed, like for example pretty-printing, it is still possible to redefine the attributes
+In the cases were specialised behaviour is needed, like for example pretty-printing, it is still possible to redefine the attributes
 involved on these aspects. As such, our mechanism is much more expressive than conventional macro mechanisms, which only perform a structure transformation. Using the library we get Task~4 almost for free.
 
-Our approach is not very suitable for some other kind of source-to-source transformations like optimizations,
+Our approach is not very suitable for some other kind of source-to-source transformations like optimisations,
 because we do not represent the AST with values (if we want to keep the AST extensible) and
 we (still) do not have higher-order attributes.
 Although a possible approach is to generate an AST of a fixed core language and perform 
-the optimizations in this language.
+the optimisations in this language.
 
 \subsubsection{Code generation}
 
 We generate the C abstract syntax representation provided by the package language-c\footnote{http://hackage.haskell.org/package/language-c}.
 This package also includes a pretty-printing function for the abstract syntax.
 
-Since ANSI C does not include nested functions  we have to lift  all the procedures, 
+Since ANSI C does not allow for nested functions  we have to lift  all the procedures, 
 types and constants definitions to top-level when generating the C code required by the challenge (note that  the lifting as specified is trivial, 
-since the exercise does not require bindings to be lifted properly).
+since nested procedures in Oberon0 cannot refer to variables defined in the outer scope).%the exercise does not require bindings to be lifted properly).
 In order to avoid name clashes with C keywords or due to the lifting process, we rename every identifier to make it unique.  
 New names are composed by: a character \texthaskell{'_'} (assuring no clashes with C keywords),
 the path (module and procedure names) to the scope were the name is defined and the actual name. 
 Thus, if we have the following Oberon0 program:
 \begin{oberon0}
 MODULE A;
-  VAR B_C : INTEGER;
+  VAR BC : INTEGER;
   PROCEDURE B;
     PROCEDURE C;
     END C
   END B
 END A.
 \end{oberon0}
-The names are mapped: the variable name \texthaskell{B_C} to \texthaskell{A_B_C},
+The names are mapped: the variable name \texthaskell{BC} to \texthaskell{A_BC},
 the procedure name \texthaskell{B} to \texthaskell{A_B} and
-the procedure name \texthaskell{C} to \texthaskell{A_1B_C}.
-When prefixing with procedure names we add the number 1 at the beginning,
-to make this name an invalid Oberon identifier, in order to avoid new clashes
-like the one we could have had between the new names for \texthaskell{B_C}
-and \texthaskell{C}.
+the procedure name \texthaskell{C} to \texthaskell{A_B_C}.
+Since underscore is not allowed in Oberon0 identifiers, 
+this renaming does not introduce new clashes, 
+like the one we could have had with \texthaskell{C} if the variable 
+\texthaskell{BC} was called \texthaskell{B_C}.
+
 
 To implement the renaming we extend the symbol table with the name mapping.
+Thus, for example, when defining the code generation attribute for the
+production \texthaskell{IdExp} (use of identifiers) the new name is looked-up in the table.
 
-\subsection{Artifacts}
+\subsection{Artefacts}
 
-In Table~\ref{table:locs} we show the complexity (in lines of code) of our implementation of the compiler,
+In Table~\ref{table:locs} we show the complexity (in lines of code without comments) of our implementation of the compiler,
 disaggregated into the different tasks and language levels.
 The \emph{Common} column includes the \texthaskell{Gram} and \texthaskell{Decl} files,
 while the \emph{Common} row includes some code used by the \texthaskell{Main} modules.
@@ -449,7 +493,7 @@ while the \emph{Common} row includes some code used by the \texthaskell{Main} mo
 
 The code includes 26 lines of Template Haskell, calling functions defined in the libraries to avoid some boilerplate.
 
-We have implemented all the combinations from L1-T1 to L4-T5, including the artifacts proposed by the challenge.
+We have implemented all the combinations from L1-T1 to L4-T5, including the artefacts proposed by the challenge.
 
 %\subsection{Observations}
 
@@ -460,21 +504,22 @@ The most important aspect of our approach is the possibility to construct a comp
 out of a collection of pre-compiled, statically type-checked, possibly mutually dependent
 language-definition fragments written in Haskell, but with a DSL taste.
 
-When looking at all the aspects we have covered we can conclude that we managed to find solutions for all aspects of the problems; 
-we were rescued by the fact that we could always fall back to plain Haskell, 
-in case our libraries were not providing a standard solution for the problem at hand. 
+When looking at all the aspects we have covered, 
+we can conclude that we managed to find solutions for all of them. 
+This should not come as a surprise since we could always fall back to plain Haskell in those cases where 
+our libraries were not providing a standard solution for the problem at hand. 
 We have seen such solutions for dealing with flexible symbol tables, generating new identifiers and types.
 
-We mention again that our implementation is quite verbose, since each module contains quite some code ``describing its interface'' in the collection of co-operating modules. 
+We mention again that our implementation is somewhat verbose, since each module contains quite some code ``describing its interface'' in the collection of co-operating modules. 
 This is the price we have to pay for getting the extreme degree of flexibility we are providing. 
-By collapse the modules the amount of linking information shrinks considerably.
-Other option to reduce verbosity is to use uuagc to generate AspectAG code \cite{VSM12}.
+By collapsing the modules the amount of linking information shrinks considerably.
+We can reduce verbosity even further by using the conventional attribute grammar system \emph{uuagc} to generate AspectAG code \cite{VSM12}.
 
-Another cause of the verbosity is that we have not used the system itself or Template Haskell to capture common patterns. 
+Another cause of the verbosity is that we have not used the system itself nor Template Haskell to capture common patterns. 
 We have chosen to reveal the underlying mechanisms, the role of the type system, the full flexibility provided, 
 and have left open the possibility for further extensions.
 
-The lack of open data types in Haskell makes it hard to implement AST transformations in extensible languages using our technique.
+The lack of open data types in Haskell make it not entirely straightforward to implement AST transformations in extensible languages using our technique.
 Semantic macros solve some of these problems. A possible approach is to use our technique to implement the front-end of a compiler,
 translating to a core fixed language, and then use other more traditional approaches (like uuagc) to implement the back-end.
 
