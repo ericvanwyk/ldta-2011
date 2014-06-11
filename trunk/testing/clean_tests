@@ -1,14 +1,14 @@
 #!/bin/bash
 
-rm ../tests/*/positive/L*/*_pp.ob
-rm ../tests/*/positive/L*/*_lifted.ob
-rm ../tests/*/positive/L*/*.c
-rm ../tests/*/positive/L*/*.a
-rm ../tests/*/positive/L*/*.stdout
-rm ../tests/*/positive/L*/*.errors
+rm -f ../tests/*/positive/L*/*_pp.ob
+rm -f ../tests/*/positive/L*/*_lifted.ob
+rm -f ../tests/*/positive/L*/*.c
+rm -f ../tests/*/positive/L*/*.a
+rm -f ../tests/*/positive/L*/*.stdout
+rm -f ../tests/*/positive/L*/*.errors
 
-rm ../tests/*/negative/*_errors/L*/*_pp.ob
-rm ../tests/*/negative/*_errors/L*/*.errors
-rm ../tests/*/negative/*_errors/L*/*_lifted.ob
-rm ../tests/*/negative/*_errors/L*/*.c
+rm -f ../tests/*/negative/*_errors/L*/*_pp.ob
+rm -f ../tests/*/negative/*_errors/L*/*.errors
+rm -f ../tests/*/negative/*_errors/L*/*_lifted.ob
+rm -f ../tests/*/negative/*_errors/L*/*.c
 
