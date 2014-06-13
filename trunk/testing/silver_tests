@@ -1,9 +1,38 @@
 #!/bin/bash
 
-## To run artifact-specific tests, use the '-A#' option (sub 1, 2a, 2b, 3, or 4 for '#')
+# Testing the Silver specification of Oberon0 requires that the
+# LDTA Tool Challenge Google Code repository
+#   https://code.google.com/p/ldta-2011/
+# is checked out into the same directory as the GitHub repository
+# containing the Silver Oberon0 specification:
+#   https://github.com/melt-umn/Oberon0
+# resulting in the two directories 'ldta-2011' and 'Oberon0' being
+# siblings in some directory.
 
-## Avoid relative paths
-JAR=`python -c 'import os.path; print os.path.realpath(os.path.abspath("../L4_T5.jar"))'`
+# If you checked out the Silver Oberon0 specification to a directory
+# with a different name, put that name in the variable below:
 
-## Run supertest.py with silver compiler
+SilverOberon0="Oberon0"
+
+# If you checked out the Silver Oberon0 specification to a different
+# directory that indicated above, put that relative path in the variable
+# below:
+
+PathToSilverOberon0="../../"
+
+
+# Make sure the Silver-generated JAR, oberon0.jar, has been created.
+# Go to the ${RelativiePathToJar} directory and run ./silver-compile
+# You will need to have Silver installed for this work, of course.
+
+RelativePathToJar="${PathToSilverOberon0}${SilverOberon0}/edu.umn.cs.melt.Oberon0/artifacts/A5/"
+
+
+# To run artifact-specific tests, use the '-A#' option
+# (sub 1, 2a, 2b, 3, or 4 for '#')
+
+# Avoid relative paths
+JAR=`python -c "import os.path; print os.path.realpath(os.path.abspath(\"${RelativePathToJar}/oberon0.jar\"))"`
+
+# Run supertest.py with silver compiler
 python supertest.py $@ java -jar $JAR
